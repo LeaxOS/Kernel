@@ -5,7 +5,7 @@
 
 #include "physical_page.h"
 
-void init_physical_page(physical_page_t *page, uint32_t frame_number) {
+void init_physical_page(physical_page_t *page, uint64_t frame_number) {
     if (!page) return;
     page->frame_number = frame_number;
     page->flags = 0;
