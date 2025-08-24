@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 /* Include the project's stdint.h using a relative path from Mm/Include */
-#include "../../Include/stdint.h"
+#include "stdint.h"
 
 /* Physical page descriptor structure */
 typedef struct PhysicalPage {
