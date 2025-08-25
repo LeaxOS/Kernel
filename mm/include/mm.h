@@ -260,6 +260,12 @@ static inline mm_zone_t get_memory_zone(phys_addr_t paddr) {
  * ======================================================================== */
 
 /**
+ * @brief Early memory management initialization
+ * @return 0 on success, negative error code on failure
+ */
+int mm_early_init(void);
+
+/**
  * @brief Initialize the memory management subsystem
  * @param config Configuration parameters
  * @return 0 on success, negative error code on failure
@@ -270,6 +276,36 @@ int mm_init(const mm_config_t *config);
  * @brief Shutdown the memory management subsystem
  */
 void mm_shutdown(void);
+
+/**
+ * @brief Check if memory management is initialized
+ * @return true if initialized, false otherwise
+ */
+bool mm_is_initialized(void);
+
+/**
+ * @brief Get memory management configuration
+ * @param config Pointer to store configuration
+ * @return 0 on success, negative error code on failure
+ */
+int mm_get_config(mm_config_t *config);
+
+/**
+ * @brief Get global memory statistics
+ * @param stats Pointer to store statistics
+ */
+void mm_get_global_stats(mm_stats_t *stats);
+
+/**
+ * @brief Print memory management status
+ */
+void mm_print_status(void);
+
+/**
+ * @brief Perform memory management self-test
+ * @return 0 on success, negative error code on failure
+ */
+int mm_self_test(void);
 
 /**
  * @brief Enable virtual memory management
