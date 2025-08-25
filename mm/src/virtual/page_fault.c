@@ -25,22 +25,10 @@
 #include "../../../Include/stdbool.h"
 #include "../../../Include/string.h"
 #include "../../../Include/stdio.h"
+#include "../../include/mm_common.h"
 #include "../../include/mm.h"
 #include "../../include/page_alloc.h"
 
-/* Fallback pour compilation standalone */
-#define printk printf
-#define panic(msg) do { printf("PANIC: %s\n", msg); while(1); } while(0)
-
-/* Kernel log levels */
-#define KERN_EMERG    "0"  /* Emergency */
-#define KERN_ALERT    "1"  /* Alert */
-#define KERN_CRIT     "2"  /* Critical */
-#define KERN_ERR      "3"  /* Error */
-#define KERN_WARNING  "4"  /* Warning */
-#define KERN_NOTICE   "5"  /* Notice */
-#define KERN_INFO     "6"  /* Info */
-#define KERN_DEBUG    "7"  /* Debug */
 
 /* Déclarations forward */
 typedef struct vm_area_struct vma_t;
@@ -164,21 +152,10 @@ static bool enable_stack_growth = true;
 
 /* Synchronization */
 #ifdef CONFIG_SMP
-typedef struct {
-    volatile int locked;
-} spinlock_t;
-#define SPINLOCK_INIT {0}
-static inline void spin_lock(spinlock_t *lock) {
-    while (__sync_lock_test_and_set(&lock->locked, 1)) {
-        __builtin_ia32_pause();
-    }
-}
-static inline void spin_unlock(spinlock_t *lock) {
-    __sync_lock_release(&lock->locked);
-}
-static spinlock_t pf_lock = SPINLOCK_INIT;
-#define PF_LOCK() spin_lock(&pf_lock)
-#define PF_UNLOCK() spin_unlock(&pf_lock)
+/* Spinlock definitions moved to mm_common.h */
+static mm_spinlock_t pf_lock = MM_SPINLOCK_INIT("unknown");
+#define PF_LOCK() mm_spin_lock(&pf_lock)
+#define PF_UNLOCK() mm_spin_unlock(&pf_lock)
 #else
 #define PF_LOCK() do {} while(0)
 #define PF_UNLOCK() do {} while(0)
@@ -422,7 +399,7 @@ static int handle_allocate_page(page_fault_info_t *info) {
     virt_addr_t page_addr = info->fault_address & PAGE_MASK;
     
     /* TODO: Déterminer les flags appropriés depuis la VMA */
-    uint32_t flags = _PAGE_PRESENT | _PAGE_RW | _PAGE_USER;
+    uint32_t flags = _PAGE_PRESENT | _PAGE_RW | PAGE_USER;
     
     /* Mapper la page dans l'espace d'adressage */
     if (map_page_in_directory(NULL, page_addr, phys_page, flags) != 0) {

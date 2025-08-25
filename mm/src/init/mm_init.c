@@ -32,18 +32,6 @@
 #include "string.h"
 #include "stdio.h"
 
-/* Fallback for standalone compilation */
-#define printk printf
-#define panic(msg) do { printf("PANIC: %s\n", msg); while(1); } while(0)
-/* Kernel log levels */
-#define KERN_EMERG    "0"  /* Emergency */
-#define KERN_ALERT    "1"  /* Alert */
-#define KERN_CRIT     "2"  /* Critical */
-#define KERN_ERR      "3"  /* Error */
-#define KERN_WARNING  "4"  /* Warning */
-#define KERN_NOTICE   "5"  /* Notice */
-#define KERN_INFO     "6"  /* Info */
-#define KERN_DEBUG    "7"  /* Debug */
 
 /* ========================================================================
  * GLOBAL VARIABLES AND STATE
@@ -58,21 +46,10 @@ static mm_stats_t global_stats;
 /** Spinlock for protecting MM globals in SMP */
 #ifdef CONFIG_SMP
 /* Define basic spinlock if not available */
-typedef struct {
-    volatile int locked;
-} spinlock_t;
-#define SPINLOCK_INIT {0}
-static inline void spin_lock(spinlock_t *lock) {
-    while (__sync_lock_test_and_set(&lock->locked, 1)) {
-        while (lock->locked) __asm__ __volatile__("pause");
-    }
-}
-static inline void spin_unlock(spinlock_t *lock) {
-    __sync_lock_release(&lock->locked);
-}
-static spinlock_t mm_global_lock = SPINLOCK_INIT;
-#define MM_LOCK() spin_lock(&mm_global_lock)
-#define MM_UNLOCK() spin_unlock(&mm_global_lock)
+/* Spinlock definitions moved to mm_common.h */
+static mm_spinlock_t mm_global_lock = MM_SPINLOCK_INIT("unknown");
+#define MM_LOCK() mm_spin_lock(&mm_global_lock)
+#define MM_UNLOCK() mm_spin_unlock(&mm_global_lock)
 #else
 #define MM_LOCK() do {} while(0)
 #define MM_UNLOCK() do {} while(0)

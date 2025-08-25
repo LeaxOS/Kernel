@@ -25,22 +25,15 @@
 #include "../../../Include/stdbool.h"
 #include "../../../Include/string.h"
 #include "../../../Include/stdio.h"
+#include "../../include/mm_common.h"
 #include "../../include/mm.h"
 #include "../../include/vmalloc.h"
 
-/* Fallback pour compilation standalone */
-#define printk printf
-#define panic(msg) do { printf("PANIC: %s\n", msg); while(1); } while(0)
+/* Définition du GFP_KERNEL si non défini */
+#ifndef GFP_KERNEL
+#define GFP_KERNEL 0
+#endif
 
-/* Kernel log levels */
-#define KERN_EMERG    "0"  /* Emergency */
-#define KERN_ALERT    "1"  /* Alert */
-#define KERN_CRIT     "2"  /* Critical */
-#define KERN_ERR      "3"  /* Error */
-#define KERN_WARNING  "4"  /* Warning */
-#define KERN_NOTICE   "5"  /* Notice */
-#define KERN_INFO     "6"  /* Info */
-#define KERN_DEBUG    "7"  /* Debug */
 
 /* ========================================================================
  * CONSTANTS AND DEFINITIONS
@@ -55,6 +48,11 @@
 #define VMA_TYPE_HEAP           0x0020  /* Tas dynamique */
 #define VMA_TYPE_VDSO           0x0040  /* VDSO (Virtual DSO) */
 #define VMA_TYPE_VSYSCALL       0x0080  /* Vsyscall page */
+
+/* Permissions de VMA */
+#define VM_READ   0x1
+#define VM_WRITE  0x2
+#define VM_EXEC   0x4
 
 /* Flags spéciaux de VMA */
 #define VMA_FLAG_GROWSDOWN      0x0100  /* Croît vers le bas (pile) */
@@ -208,21 +206,10 @@ static uint32_t mm_count = 0;
 
 /* Synchronization */
 #ifdef CONFIG_SMP
-typedef struct {
-    volatile int locked;
-} spinlock_t;
-#define SPINLOCK_INIT {0}
-static inline void spin_lock(spinlock_t *lock) {
-    while (__sync_lock_test_and_set(&lock->locked, 1)) {
-        __builtin_ia32_pause();
-    }
-}
-static inline void spin_unlock(spinlock_t *lock) {
-    __sync_lock_release(&lock->locked);
-}
-static spinlock_t vma_lock = SPINLOCK_INIT;
-#define VMA_LOCK() spin_lock(&vma_lock)
-#define VMA_UNLOCK() spin_unlock(&vma_lock)
+/* Spinlock definitions moved to mm_common.h */
+static mm_spinlock_t vma_lock = MM_SPINLOCK_INIT("unknown");
+#define VMA_LOCK() mm_spin_lock(&vma_lock)
+#define VMA_UNLOCK() mm_spin_unlock(&vma_lock)
 #else
 #define VMA_LOCK() do {} while(0)
 #define VMA_UNLOCK() do {} while(0)
@@ -252,7 +239,7 @@ static vma_t *alloc_vma(void) {
     
     if (!vma) {
         /* Allouer depuis le gestionnaire de mémoire kernel */
-        vma = (vma_t *)kmalloc(sizeof(vma_t), GFP_KERNEL);
+        vma = (vma_t *)kmalloc(sizeof(vma_t));
         if (!vma) {
             return NULL;
         }
@@ -828,7 +815,7 @@ vma_t *create_vma(mm_struct_t *mm, virt_addr_t start, virt_addr_t end,
  * @return Pointeur vers mm_struct ou NULL
  */
 mm_struct_t *create_mm_struct(void) {
-    mm_struct_t *mm = (mm_struct_t *)kmalloc(sizeof(mm_struct_t), GFP_KERNEL);
+    mm_struct_t *mm = (mm_struct_t *)kmalloc(sizeof(mm_struct_t));
     if (!mm) {
         return NULL;
     }

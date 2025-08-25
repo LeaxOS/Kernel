@@ -22,6 +22,7 @@ extern "C" {
 #include "stddef.h"
 #include "stdint.h"
 #include "stdbool.h"
+#include "mm_common.h"
 
 /* ========================================================================
  * FORWARD DECLARATIONS AND BASIC TYPES
@@ -88,16 +89,7 @@ typedef uint32_t vmalloc_flags_t;
 #define VMALLOC_FLAG_GUARD      0x40U   /**< Add guard pages */
 #define VMALLOC_FLAG_USER       0x80U   /**< User-accessible mapping */
 
-/** Virtual memory area flags */
-typedef uint32_t vma_flags_t;
-#define VMA_FLAG_SHARED         0x01U   /**< Shared mapping */
-#define VMA_FLAG_PRIVATE        0x02U   /**< Private mapping */
-#define VMA_FLAG_FIXED          0x04U   /**< Fixed address mapping */
-#define VMA_FLAG_GROWSDOWN      0x08U   /**< Stack-like growth */
-#define VMA_FLAG_GROWSUP        0x10U   /**< Heap-like growth */
-#define VMA_FLAG_LOCKED         0x20U   /**< Memory locked in RAM */
-#define VMA_FLAG_RESERVED       0x40U   /**< Reserved area */
-#define VMA_FLAG_SPECIAL        0x80U   /**< Special mapping */
+/* Note: vma_flags_t is now defined in mm_common.h to avoid duplication */
 
 /** Memory mapping flags */
 typedef uint32_t mmap_flags_t;

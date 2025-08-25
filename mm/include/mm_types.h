@@ -13,15 +13,24 @@
 #include "../../Include/stdint.h"
 #include "../../Include/stddef.h"
 #include "../../Include/stdbool.h"
+#include "mm_common.h"
+
+/* ========================================================================
+ * FORWARD DECLARATIONS
+ * ======================================================================== */
+
+/* Forward declarations for complex types */
+struct list_head;
+struct rb_node;
+struct rb_root;
+typedef struct pgd pgd_t;
+typedef struct mm_context mm_context_t;
 
 /* ========================================================================
  * BASIC TYPES AND CONSTANTS
  * ======================================================================== */
 
-/* Tailles de pages standards */
-#define PAGE_SIZE       4096        /* 4KB page standard */
-#define PAGE_SHIFT      12          /* log2(PAGE_SIZE) */
-#define PAGE_MASK       (~(PAGE_SIZE - 1))
+/* Note: PAGE_SIZE and related constants are defined in mm_common.h */
 
 #define LARGE_PAGE_SIZE (2 * 1024 * 1024)  /* 2MB large page */
 #define HUGE_PAGE_SIZE  (1024 * 1024 * 1024) /* 1GB huge page */
@@ -137,7 +146,7 @@ typedef struct page {
     /* Métadonnées */
     zone_id_t zone_id;              /* Zone de la page */
     numa_node_t nid;                /* Nœud NUMA */
-    void *virtual;                  /* Adresse virtuelle */
+    void *virt_addr;                /* Adresse virtuelle */
 } page_t;
 
 /* ========================================================================
@@ -147,34 +156,7 @@ typedef struct page {
 /**
  * @brief Flags d'allocation (style GFP)
  */
-typedef enum {
-    /* Zones autorisées */
-    GFP_DMA         = (1 << 0),     /* Allocation DMA */
-    GFP_HIGHMEM     = (1 << 1),     /* Mémoire haute OK */
-    GFP_DMA32       = (1 << 2),     /* DMA 32-bit */
-    
-    /* Comportement d'allocation */
-    GFP_WAIT        = (1 << 4),     /* Peut attendre */
-    GFP_IO          = (1 << 5),     /* Peut faire I/O */
-    GFP_FS          = (1 << 6),     /* Peut faire FS */
-    GFP_COLD        = (1 << 7),     /* Page froide */
-    GFP_NOWARN      = (1 << 8),     /* Pas d'avertissement */
-    GFP_REPEAT      = (1 << 9),     /* Retry si échec */
-    GFP_NOFAIL      = (1 << 10),    /* Ne doit pas échouer */
-    GFP_NORETRY     = (1 << 11),    /* Pas de retry */
-    GFP_MEMALLOC    = (1 << 12),    /* Allocation mémoire système */
-    GFP_COMP        = (1 << 13),    /* Compression OK */
-    GFP_ZERO        = (1 << 14),    /* Zéro-initialiser */
-    GFP_NOMEMALLOC  = (1 << 15),    /* Pas d'allocation système */
-    
-    /* Combinaisons courantes */
-    GFP_ATOMIC      = GFP_NOWARN,
-    GFP_KERNEL      = GFP_WAIT | GFP_IO | GFP_FS,
-    GFP_USER        = GFP_WAIT | GFP_IO | GFP_FS | GFP_HIGHMEM,
-    GFP_HIGHUSER    = GFP_USER | GFP_HIGHMEM,
-    GFP_NOIO        = GFP_WAIT,
-    GFP_NOFS        = GFP_WAIT | GFP_IO
-} gfp_flags_t;
+/* Note: GFP flags are now defined in mm_common.h to avoid conflicts */
 
 /* ========================================================================
  * VIRTUAL MEMORY STRUCTURES

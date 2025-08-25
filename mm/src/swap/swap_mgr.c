@@ -26,22 +26,10 @@
 #include "../../../Include/stdbool.h"
 #include "../../../Include/string.h"
 #include "../../../Include/stdio.h"
+#include "../../include/mm_common.h"
 #include "../../include/mm.h"
 #include "../../include/page_alloc.h"
 
-/* Fallback pour compilation standalone */
-#define printk printf
-#define panic(msg) do { printf("PANIC: %s\n", msg); while(1); } while(0)
-
-/* Kernel log levels */
-#define KERN_EMERG    "0"  /* Emergency */
-#define KERN_ALERT    "1"  /* Alert */
-#define KERN_CRIT     "2"  /* Critical */
-#define KERN_ERR      "3"  /* Error */
-#define KERN_WARNING  "4"  /* Warning */
-#define KERN_NOTICE   "5"  /* Notice */
-#define KERN_INFO     "6"  /* Info */
-#define KERN_DEBUG    "7"  /* Debug */
 
 /* ========================================================================
  * SWAP CONSTANTS AND DEFINITIONS
@@ -210,21 +198,10 @@ static uint32_t swap_readahead_default_size = SWAP_READAHEAD_SIZE;
 
 /* Synchronization */
 #ifdef CONFIG_SMP
-typedef struct {
-    volatile int locked;
-} spinlock_t;
-#define SPINLOCK_INIT {0}
-static inline void spin_lock(spinlock_t *lock) {
-    while (__sync_lock_test_and_set(&lock->locked, 1)) {
-        __builtin_ia32_pause();
-    }
-}
-static inline void spin_unlock(spinlock_t *lock) {
-    __sync_lock_release(&lock->locked);
-}
-static spinlock_t swap_lock = SPINLOCK_INIT;
-#define SWAP_LOCK() spin_lock(&swap_lock)
-#define SWAP_UNLOCK() spin_unlock(&swap_lock)
+/* Spinlock definitions moved to mm_common.h */
+static mm_spinlock_t swap_lock = MM_SPINLOCK_INIT("unknown");
+#define SWAP_LOCK() mm_spin_lock(&swap_lock)
+#define SWAP_UNLOCK() mm_spin_unlock(&swap_lock)
 #else
 #define SWAP_LOCK() do {} while(0)
 #define SWAP_UNLOCK() do {} while(0)

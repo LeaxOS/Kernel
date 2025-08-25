@@ -26,22 +26,10 @@
 #include "../../../Include/stdbool.h"
 #include "../../../Include/string.h"
 #include "../../../Include/stdio.h"
+#include "../../include/mm_common.h"
 #include "../../include/mm.h"
 #include "mm_setup.h"
 
-/* Fallback for standalone compilation */
-#define printk printf
-#define panic(msg) do { printf("PANIC: %s\n", msg); while(1); } while(0)
-
-/* Kernel log levels */
-#define KERN_EMERG    "0"  /* Emergency */
-#define KERN_ALERT    "1"  /* Alert */
-#define KERN_CRIT     "2"  /* Critical */
-#define KERN_ERR      "3"  /* Error */
-#define KERN_WARNING  "4"  /* Warning */
-#define KERN_NOTICE   "5"  /* Notice */
-#define KERN_INFO     "6"  /* Info */
-#define KERN_DEBUG    "7"  /* Debug */
 
 /* ========================================================================
  * CONSTANTS AND CONFIGURATION
@@ -188,21 +176,10 @@ static const char *memory_type_names[MEMORY_TYPE_COUNT] = {
 
 /* Synchronization */
 #ifdef CONFIG_SMP
-typedef struct {
-    volatile int locked;
-} spinlock_t;
-#define SPINLOCK_INIT {0}
-static inline void spin_lock(spinlock_t *lock) {
-    while (__sync_lock_test_and_set(&lock->locked, 1)) {
-        __builtin_ia32_pause();
-    }
-}
-static inline void spin_unlock(spinlock_t *lock) {
-    __sync_lock_release(&lock->locked);
-}
-static spinlock_t memmap_lock = SPINLOCK_INIT;
-#define MEMMAP_LOCK() spin_lock(&memmap_lock)
-#define MEMMAP_UNLOCK() spin_unlock(&memmap_lock)
+/* Spinlock definitions moved to mm_common.h */
+static mm_spinlock_t memmap_lock = MM_SPINLOCK_INIT("unknown");
+#define MEMMAP_LOCK() mm_spin_lock(&memmap_lock)
+#define MEMMAP_UNLOCK() mm_spin_unlock(&memmap_lock)
 #else
 #define MEMMAP_LOCK() do {} while(0)
 #define MEMMAP_UNLOCK() do {} while(0)

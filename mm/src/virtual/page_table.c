@@ -28,23 +28,11 @@
 #include "../../../Include/stdbool.h"
 #include "../../../Include/string.h"
 #include "../../../Include/stdio.h"
+#include "../../include/mm_common.h"
 #include "../../include/mm.h"
 #include "../../include/page_alloc.h"
 #include "../physical/phys_page.h"
 
-/* Fallback for standalone compilation */
-#define printk printf
-#define panic(msg) do { printf("PANIC: %s\n", msg); while(1); } while(0)
-
-/* Kernel log levels */
-#define KERN_EMERG    "0"  /* Emergency */
-#define KERN_ALERT    "1"  /* Alert */
-#define KERN_CRIT     "2"  /* Critical */
-#define KERN_ERR      "3"  /* Error */
-#define KERN_WARNING  "4"  /* Warning */
-#define KERN_NOTICE   "5"  /* Notice */
-#define KERN_INFO     "6"  /* Info */
-#define KERN_DEBUG    "7"  /* Debug */
 
 /* ========================================================================
  * ARCHITECTURE-SPECIFIC DEFINITIONS (x86 32-bit)
@@ -180,21 +168,10 @@ static int pd_cache_count = 0;
 
 /* Synchronization */
 #ifdef CONFIG_SMP
-typedef struct {
-    volatile int locked;
-} spinlock_t;
-#define SPINLOCK_INIT {0}
-static inline void spin_lock(spinlock_t *lock) {
-    while (__sync_lock_test_and_set(&lock->locked, 1)) {
-        __builtin_ia32_pause();
-    }
-}
-static inline void spin_unlock(spinlock_t *lock) {
-    __sync_lock_release(&lock->locked);
-}
-static spinlock_t pt_lock = SPINLOCK_INIT;
-#define PT_LOCK() spin_lock(&pt_lock)
-#define PT_UNLOCK() spin_unlock(&pt_lock)
+/* Spinlock definitions moved to mm_common.h */
+static mm_spinlock_t pt_lock = MM_SPINLOCK_INIT("unknown");
+#define PT_LOCK() mm_spin_lock(&pt_lock)
+#define PT_UNLOCK() mm_spin_unlock(&pt_lock)
 #else
 #define PT_LOCK() do {} while(0)
 #define PT_UNLOCK() do {} while(0)
@@ -203,6 +180,11 @@ static spinlock_t pt_lock = SPINLOCK_INIT;
 /* ========================================================================
  * LOW-LEVEL PTE/PGD OPERATIONS
  * ======================================================================== */
+
+/* VM flag definitions (should match your VMM definitions) */
+#define VM_WRITE   (1 << 0)
+#define VM_USER    (1 << 1)
+#define VM_IO      (1 << 2)
 
 /**
  * @brief Crée une entrée PTE
@@ -311,7 +293,7 @@ static page_table_t *alloc_page_table(void) {
     
     if (!pt) {
         /* Allouer une nouvelle page physique */
-        phys_addr_t phys_addr = pmm_alloc_page();
+        phys_addr_t phys_addr = pmm_alloc_page(1);
         if (phys_addr == 0) {
             return NULL;
         }
@@ -388,7 +370,7 @@ static page_directory_t *alloc_page_directory(void) {
     
     if (!pd) {
         /* Allouer une nouvelle page */
-        phys_addr_t phys_addr = pmm_alloc_page();
+        phys_addr_t phys_addr = pmm_alloc_page(1);
         if (phys_addr == 0) {
             return NULL;
         }

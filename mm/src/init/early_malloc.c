@@ -30,19 +30,6 @@
 #include "string.h"
 #include "stdio.h"
 
-/* Fallback for standalone compilation */
-#define printk printf
-#define panic(msg) do { printf("PANIC: %s\n", msg); while(1); } while(0)
-
-/* Kernel log levels */
-#define KERN_EMERG    "0"  /* Emergency */
-#define KERN_ALERT    "1"  /* Alert */
-#define KERN_CRIT     "2"  /* Critical */
-#define KERN_ERR      "3"  /* Error */
-#define KERN_WARNING  "4"  /* Warning */
-#define KERN_NOTICE   "5"  /* Notice */
-#define KERN_INFO     "6"  /* Info */
-#define KERN_DEBUG    "7"  /* Debug */
 
 /* ========================================================================
  * CONSTANTS AND CONFIGURATION
@@ -191,21 +178,10 @@ static struct early_alloc_stats stats = {0};
 
 /* Synchronization for SMP systems */
 #ifdef CONFIG_SMP
-typedef struct {
-    volatile int locked;
-} spinlock_t;
-#define SPINLOCK_INIT {0}
-static inline void spin_lock(spinlock_t *lock) {
-    while (__sync_lock_test_and_set(&lock->locked, 1)) {
-        while (lock->locked) __asm__ __volatile__("pause");
-    }
-}
-static inline void spin_unlock(spinlock_t *lock) {
-    __sync_lock_release(&lock->locked);
-}
-static spinlock_t early_mm_lock = SPINLOCK_INIT;
-#define EARLY_LOCK() spin_lock(&early_mm_lock)
-#define EARLY_UNLOCK() spin_unlock(&early_mm_lock)
+/* Spinlock definitions moved to mm_common.h */
+static mm_spinlock_t early_mm_lock = MM_SPINLOCK_INIT("unknown");
+#define EARLY_LOCK() mm_spin_lock(&early_mm_lock)
+#define EARLY_UNLOCK() mm_spin_unlock(&early_mm_lock)
 #else
 #define EARLY_LOCK() do {} while(0)
 #define EARLY_UNLOCK() do {} while(0)

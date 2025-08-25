@@ -21,15 +21,9 @@ extern "C" {
 #include "stddef.h"
 #include "stdint.h"
 #include "stdbool.h"
+#include "mm_common.h"
 
 /* Memory layout and size definitions */
-
-/** Page size and related constants */
-#ifndef PAGE_SIZE
-#define PAGE_SIZE 4096U                 /**< Standard page size (4KB) */
-#endif
-#define PAGE_SHIFT 12U                  /**< Page size shift (log2(PAGE_SIZE)) */
-#define PAGE_MASK (PAGE_SIZE - 1U)      /**< Page alignment mask */
 
 /** Heap configuration */
 #define KERNEL_HEAP_MIN_SIZE    (1024U * 1024U)    /**< Minimum kernel heap size (1MB) */
@@ -52,13 +46,13 @@ extern "C" {
 /* Alignment & utility macros */
 
 /** Page alignment macros */
-#define PAGE_ALIGN_UP(x)        ((((uintptr_t)(x)) + PAGE_MASK) & ~((uintptr_t)PAGE_MASK))
-#define PAGE_ALIGN_DOWN(x)      (((uintptr_t)(x)) & ~((uintptr_t)PAGE_MASK))
-#define PAGE_OFFSET(addr)       (((uintptr_t)(addr)) & PAGE_MASK)
+#define PAGE_ALIGN_UP(x)        ((((uintptr_t)(x)) + (PAGE_SIZE - 1)) & ~((uintptr_t)(PAGE_SIZE - 1)))
+#define PAGE_ALIGN_DOWN(x)      (((uintptr_t)(x)) & ~((uintptr_t)(PAGE_SIZE - 1)))
+#define PAGE_OFFSET(addr)       (((uintptr_t)(addr)) & (PAGE_SIZE - 1))
 #define ADDR_TO_PAGE(addr)      (((uintptr_t)(addr)) >> PAGE_SHIFT)
 #define PAGE_TO_ADDR(page)      (((uintptr_t)(page)) << PAGE_SHIFT)
 
-/** Generic alignment macros */
+/** Generic alignment macros (additional to those in mm_common.h) */
 #define ALIGN_UP(x, align)      (((x) + (align) - 1U) & ~((align) - 1U))
 #define ALIGN_DOWN(x, align)    ((x) & ~((align) - 1U))
 #define IS_ALIGNED(x, align)    (((x) & ((align) - 1U)) == 0)
@@ -89,20 +83,11 @@ typedef uint32_t mm_flags_t;
 #define MM_FLAG_NORETRY     0x80U       /**< Don't retry on failure */
 
 /** Memory protection flags */
-typedef uint32_t vm_prot_t;
-#define VM_PROT_NONE        0x00U       /**< No access */
-#define VM_PROT_READ        0x01U       /**< Read access */
-#define VM_PROT_WRITE       0x02U       /**< Write access */
-#define VM_PROT_EXEC        0x04U       /**< Execute access */
-#define VM_PROT_ALL         (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXEC)
+/* Note: vm_prot_t is defined in mm_common.h */
 
 /** Virtual memory area flags */
-typedef uint32_t vma_flags_t;
-#define VMA_FLAG_SHARED     0x01U       /**< Shared mapping */
-#define VMA_FLAG_PRIVATE    0x02U       /**< Private mapping */
-#define VMA_FLAG_FIXED      0x04U       /**< Fixed address mapping */
-#define VMA_FLAG_GROWSDOWN  0x08U       /**< Stack-like growth */
-#define VMA_FLAG_LOCKED     0x10U       /**< Memory locked in RAM */
+/* Note: vma_flags_t is defined in mm_common.h */
+/* Additional VMA flags specific to mm.h */
 #define VMA_FLAG_CACHE      0x20U       /**< Cacheable memory */
 #define VMA_FLAG_NOCACHE    0x40U       /**< Non-cacheable memory */
 

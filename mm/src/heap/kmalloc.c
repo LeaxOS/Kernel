@@ -29,25 +29,12 @@
 #include "../../../Include/stdbool.h"
 #include "../../../Include/string.h"
 #include "../../../Include/stdio.h"
+#include "../../include/mm_common.h"
 #include "../../include/mm.h"
 #include "../../include/slab.h"
 #include "../../include/vmalloc.h"
 #include "../../include/page_alloc.h"
 #include "../physical/phys_page.h"
-
-/* Fallback for standalone compilation */
-#define printk printf
-#define panic(msg) do { printf("PANIC: %s\n", msg); while(1); } while(0)
-
-/* Kernel log levels */
-#define KERN_EMERG    "0"  /* Emergency */
-#define KERN_ALERT    "1"  /* Alert */
-#define KERN_CRIT     "2"  /* Critical */
-#define KERN_ERR      "3"  /* Error */
-#define KERN_WARNING  "4"  /* Warning */
-#define KERN_NOTICE   "5"  /* Notice */
-#define KERN_INFO     "6"  /* Info */
-#define KERN_DEBUG    "7"  /* Debug */
 
 /* ========================================================================
  * CONSTANTS AND CONFIGURATION
@@ -157,7 +144,7 @@ typedef struct {
     kmalloc_cache_t caches[KMALLOC_CACHE_COUNT]; /* Caches SLAB */
     kmalloc_header_t *alloc_list;   /* Liste des allocations */
     kmalloc_stats_t stats;          /* Statistiques */
-    spinlock_t lock;                /* Verrou principal */
+    mm_spinlock_t lock;                /* Verrou principal */
 } kmalloc_state_t;
 
 /* ========================================================================
@@ -181,20 +168,9 @@ static const char *cache_names[KMALLOC_CACHE_COUNT] = {
 
 /* Synchronization */
 #ifdef CONFIG_SMP
-typedef struct {
-    volatile int locked;
-} spinlock_t;
-#define SPINLOCK_INIT {0}
-static inline void spin_lock(spinlock_t *lock) {
-    while (__sync_lock_test_and_set(&lock->locked, 1)) {
-        __builtin_ia32_pause();
-    }
-}
-static inline void spin_unlock(spinlock_t *lock) {
-    __sync_lock_release(&lock->locked);
-}
-#define KMALLOC_LOCK() spin_lock(&g_kmalloc_state.lock)
-#define KMALLOC_UNLOCK() spin_unlock(&g_kmalloc_state.lock)
+/* Spinlock definitions moved to mm_common.h */
+#define KMALLOC_LOCK() mm_spin_lock(&g_kmalloc_state.lock)
+#define KMALLOC_UNLOCK() mm_spin_unlock(&g_kmalloc_state.lock)
 #else
 #define KMALLOC_LOCK() do {} while(0)
 #define KMALLOC_UNLOCK() do {} while(0)

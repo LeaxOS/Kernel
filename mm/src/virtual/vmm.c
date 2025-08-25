@@ -26,24 +26,12 @@
 #include "../../../Include/stdbool.h"
 #include "../../../Include/string.h"
 #include "../../../Include/stdio.h"
+#include "../../include/mm_common.h"
 #include "../../include/mm.h"
 #include "../../include/page_alloc.h"
 #include "../../include/vmalloc.h"
 #include "../physical/phys_page.h"
 
-/* Fallback for standalone compilation */
-#define printk printf
-#define panic(msg) do { printf("PANIC: %s\n", msg); while(1); } while(0)
-
-/* Kernel log levels */
-#define KERN_EMERG    "0"  /* Emergency */
-#define KERN_ALERT    "1"  /* Alert */
-#define KERN_CRIT     "2"  /* Critical */
-#define KERN_ERR      "3"  /* Error */
-#define KERN_WARNING  "4"  /* Warning */
-#define KERN_NOTICE   "5"  /* Notice */
-#define KERN_INFO     "6"  /* Info */
-#define KERN_DEBUG    "7"  /* Debug */
 
 /* ========================================================================
  * CONSTANTS AND CONFIGURATION
@@ -77,6 +65,13 @@
 #define PAGE_DIRTY              (1 << 6)        /* Page modifiée */
 #define PAGE_SIZE_EXT           (1 << 7)        /* Page 4MB (PSE) */
 #define PAGE_GLOBAL             (1 << 8)        /* Page globale */
+
+/* Flags pour VMAs */
+#define VM_READ                 (1 << 0)        /* Lecture */
+#define VM_WRITE                (1 << 1)        /* Écriture */
+#define VM_EXEC                 (1 << 2)        /* Exécution */
+#define VM_USER                 (1 << 3)        /* Espace utilisateur */
+#define VM_IO                   (1 << 4)        /* Mapping IO */
 
 /* Masques et décalages */
 #define PAGE_ADDR_MASK          0xFFFFF000UL    /* Masque adresse page */
@@ -190,7 +185,7 @@ struct mm_struct {
     mm_context_t context;
     
     /* Protection et verrous */
-    spinlock_t page_table_lock;     /* Verrou tables pages */
+    mm_spinlock_t page_table_lock;     /* Verrou tables pages */
     
     /* Statistiques */
     unsigned long fault_count;      /* Page faults total */
@@ -238,26 +233,10 @@ static pgd_t kernel_pgd[PGDIR_ENTRIES] __attribute__((aligned(PAGE_SIZE)));
 static pte_t *kernel_page_tables[PGDIR_ENTRIES];
 
 /* Synchronization */
-#ifdef CONFIG_SMP
-typedef struct {
-    volatile int locked;
-} spinlock_t;
-#define SPINLOCK_INIT {0}
-static inline void spin_lock(spinlock_t *lock) {
-    while (__sync_lock_test_and_set(&lock->locked, 1)) {
-        __builtin_ia32_pause();
-    }
-}
-static inline void spin_unlock(spinlock_t *lock) {
-    __sync_lock_release(&lock->locked);
-}
-static spinlock_t vmm_lock = SPINLOCK_INIT;
-#define VMM_LOCK() spin_lock(&vmm_lock)
-#define VMM_UNLOCK() spin_unlock(&vmm_lock)
-#else
-#define VMM_LOCK() do {} while(0)
-#define VMM_UNLOCK() do {} while(0)
-#endif
+/* Spinlock definitions moved to mm_common.h */
+static mm_spinlock_t vmm_lock = MM_SPINLOCK_INIT("unknown");
+#define VMM_LOCK() mm_spin_lock(&vmm_lock)
+#define VMM_UNLOCK() mm_spin_unlock(&vmm_lock)
 
 /* ========================================================================
  * PAGE TABLE UTILITIES
@@ -342,7 +321,7 @@ static uint32_t vm_flags_to_page_flags(uint32_t vm_flags) {
  */
 static pte_t *alloc_page_table(void) {
     /* Allouer une page physique pour la table */
-    uint64_t phys_addr = pmm_alloc_page();
+    uint64_t phys_addr = pmm_alloc_page(1);
     if (phys_addr == 0) {
         return NULL;
     }
