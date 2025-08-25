@@ -20,6 +20,7 @@
  */
 
 #include "mm.h"
+#include "early_malloc.h"
 #include "page_alloc.h"
 #include "slab.h"
 #include "vmalloc.h"
@@ -50,7 +51,7 @@
 
 /** Memory management initialization state */
 static bool mm_initialized = false;
-static bool early_mm_active = false;
+static bool main_mm_active = false;
 static mm_config_t current_config;
 static mm_stats_t global_stats;
 
@@ -87,10 +88,10 @@ static struct {
 } mm_init_state = { false, false, false, false, false };
 
 /** Early memory pool for bootstrap allocations */
-#define EARLY_POOL_SIZE (128 * 1024)  /* 128KB early pool for real kernel */
-static uint8_t early_memory_pool[EARLY_POOL_SIZE] __attribute__((aligned(64)));
-static size_t early_pool_offset = 0;
-static bool early_pool_exhausted = false;
+#define LEGACY_EARLY_POOL_SIZE (64 * 1024)  /* 64KB legacy pool for compatibility */
+static uint8_t legacy_early_pool[LEGACY_EARLY_POOL_SIZE] __attribute__((aligned(64)));
+static size_t legacy_pool_offset = 0;
+static bool legacy_pool_exhausted = false;
 
 /** Memory zone information */
 static struct memory_zone_info {
@@ -126,16 +127,16 @@ static struct boot_memory_info boot_mem_info = {
  * ======================================================================== */
 
 /**
- * @brief Early memory allocator for bootstrap phase
+ * @brief Legacy early memory allocator for compatibility
  * 
- * This allocator provides memory during system initialization before
- * the full memory management subsystem is available. Thread-safe for SMP.
+ * This allocator provides minimal memory during system initialization
+ * and transitions to the advanced early allocator system.
  * 
  * @param size Size in bytes to allocate
  * @return Pointer to allocated memory, or NULL on failure
  */
-static void *early_alloc(size_t size) {
-    if (!early_mm_active || early_pool_exhausted) {
+static void *legacy_early_alloc(size_t size) {
+    if (!early_mm_is_active() || legacy_pool_exhausted) {
         return NULL;
     }
     
@@ -146,16 +147,17 @@ static void *early_alloc(size_t size) {
     MM_LOCK();
     
     /* Check if we have enough space */
-    if (early_pool_offset + size > EARLY_POOL_SIZE) {
-        early_pool_exhausted = true;
+    if (legacy_pool_offset + size > LEGACY_EARLY_POOL_SIZE) {
+        legacy_pool_exhausted = true;
         MM_UNLOCK();
-        printk(KERN_WARNING "Early memory pool exhausted! Allocated %zu/%d bytes\n",
-               early_pool_offset, EARLY_POOL_SIZE);
-        return NULL;
+        printk(KERN_WARNING "Legacy early memory pool exhausted! Allocated %zu/%d bytes\n",
+               legacy_pool_offset, LEGACY_EARLY_POOL_SIZE);
+        /* Try to use the advanced early allocator */
+        return early_malloc(size, EARLY_FLAG_ZERO);
     }
     
-    void *ptr = &early_memory_pool[early_pool_offset];
-    early_pool_offset += size;
+    void *ptr = &legacy_early_pool[legacy_pool_offset];
+    legacy_pool_offset += size;
     
     MM_UNLOCK();
     
@@ -166,23 +168,22 @@ static void *early_alloc(size_t size) {
 }
 
 /**
- * @brief Initialize early memory allocator
+ * @brief Initialize legacy early memory allocator
  */
-static void early_mm_init(void) {
-    early_pool_offset = 0;
-    early_pool_exhausted = false;
-    early_mm_active = true;
+static void legacy_early_mm_init(void) {
+    legacy_pool_offset = 0;
+    legacy_pool_exhausted = false;
     
-    /* Clear the early memory pool */
-    memset(early_memory_pool, 0, EARLY_POOL_SIZE);
+    /* Clear the legacy early memory pool */
+    memset(legacy_early_pool, 0, LEGACY_EARLY_POOL_SIZE);
 }
 
 /**
- * @brief Shutdown early memory allocator
+ * @brief Shutdown legacy early memory allocator
  */
-static void early_mm_shutdown(void) {
-    early_mm_active = false;
+static void legacy_early_mm_shutdown(void) {
     /* Note: We don't clear the pool as some early allocations might still be in use */
+    legacy_pool_exhausted = true;
 }
 
 /* ========================================================================
@@ -309,11 +310,11 @@ static int reserve_critical_regions(void) {
                initrd_size / 1024);
     }
     
-    /* Reserve early memory pool */
-    phys_addr_t early_pool_phys = (phys_addr_t)early_memory_pool;
-    printk(KERN_INFO "Early pool: 0x%lx - 0x%lx (%d KB)\n",
-           early_pool_phys, early_pool_phys + EARLY_POOL_SIZE,
-           EARLY_POOL_SIZE / 1024);
+    /* Reserve legacy early memory pool */
+    phys_addr_t legacy_pool_phys = (phys_addr_t)legacy_early_pool;
+    printk(KERN_INFO "Legacy early pool: 0x%lx - 0x%lx (%d KB)\n",
+           legacy_pool_phys, legacy_pool_phys + LEGACY_EARLY_POOL_SIZE,
+           LEGACY_EARLY_POOL_SIZE / 1024);
     
     return MM_SUCCESS;
 }
@@ -532,24 +533,33 @@ static void mm_cleanup_on_error(void) {
  * @return 0 on success, negative error code on failure
  */
 int mm_early_init(void) {
-    if (early_mm_active) {
+    if (early_mm_is_active()) {
         printk(KERN_WARNING "Early MM already initialized\n");
         return MM_ERR_EXISTS;  /* Already initialized */
     }
     
     printk(KERN_INFO "Early memory management initialization\n");
     
-    /* Initialize early memory allocator */
-    early_mm_init();
+    /* Initialize legacy early memory allocator for compatibility */
+    legacy_early_mm_init();
+    
+    /* Initialize the advanced early memory allocators */
+    int ret = early_mm_init();
+    if (ret != 0) {
+        printk(KERN_ERR "Failed to initialize early memory allocators: %d\n", ret);
+        return MM_ERR_INIT;
+    }
     
     /* Initialize memory barriers */
     if (init_memory_barriers() != MM_SUCCESS) {
         printk(KERN_ERR "Failed to initialize memory barriers\n");
         early_mm_shutdown();
+        legacy_early_mm_shutdown();
         return MM_ERR_INIT;
     }
     
-    printk(KERN_INFO "Early MM initialized (%d KB early pool)\n", EARLY_POOL_SIZE / 1024);
+    printk(KERN_INFO "Early MM initialized (advanced early allocators active)\n");
+    early_print_stats();
     return MM_SUCCESS;
 }
 
@@ -658,7 +668,8 @@ int mm_init(const mm_config_t *config) {
     
     /* Shutdown early memory allocator */
     early_mm_shutdown();
-    printk(KERN_INFO "Early memory allocator shut down\n");
+    legacy_early_mm_shutdown();
+    printk(KERN_INFO "Early memory allocators shut down\n");
     
     /* Final memory barrier to ensure initialization is visible */
     memory_barrier();
@@ -815,8 +826,12 @@ int mm_self_test(void) {
  */
 void *kmalloc(size_t size) {
     if (!mm_initialized) {
-        /* Use early allocator during boot */
-        return early_alloc(size);
+        /* Use advanced early allocator if available, fallback to legacy */
+        if (early_mm_is_active()) {
+            return early_malloc(size, 0);
+        } else {
+            return legacy_early_alloc(size);
+        }
     }
     
     if (size == 0) {
@@ -870,8 +885,15 @@ void kfree(void *ptr) {
     }
     
     if (!mm_initialized) {
-        printk(KERN_WARNING "kfree: MM not initialized, cannot free %p\n", ptr);
-        return;
+        /* During early boot, try early allocator first */
+        if (early_mm_is_active()) {
+            /* Let the early allocator determine size and handle the free */
+            early_free(ptr, 0);
+            return;
+        } else {
+            printk(KERN_WARNING "kfree: MM not initialized, cannot free %p (legacy mode)\n", ptr);
+            return;
+        }
     }
     
     /* Update statistics */
@@ -905,7 +927,11 @@ void kfree(void *ptr) {
  */
 size_t mm_get_free_memory(void) {
     if (!mm_initialized) {
-        return EARLY_POOL_SIZE - early_pool_offset;
+        if (early_mm_is_active()) {
+            return early_get_available_memory();
+        } else {
+            return LEGACY_EARLY_POOL_SIZE - legacy_pool_offset;
+        }
     }
     
     size_t free_mem = 0;
@@ -930,7 +956,13 @@ size_t mm_get_free_memory(void) {
  */
 size_t mm_get_used_memory(void) {
     if (!mm_initialized) {
-        return early_pool_offset;
+        if (early_mm_is_active()) {
+            struct early_alloc_stats stats;
+            early_get_stats(&stats);
+            return stats.current_usage;
+        } else {
+            return legacy_pool_offset;
+        }
     }
     
     size_t used_mem = 0;
@@ -1042,8 +1074,13 @@ void mm_dump_state(void) {
     
     if (!mm_initialized) {
         printk(KERN_INFO "MM not initialized\n");
-        printk(KERN_INFO "Early pool: %zu/%d bytes used\n", 
-               early_pool_offset, EARLY_POOL_SIZE);
+        if (early_mm_is_active()) {
+            printk(KERN_INFO "Advanced early memory allocators active\n");
+            early_dump_allocators();
+        } else {
+            printk(KERN_INFO "Legacy early pool: %zu/%d bytes used\n", 
+                   legacy_pool_offset, LEGACY_EARLY_POOL_SIZE);
+        }
         return;
     }
     
@@ -1159,7 +1196,7 @@ int mm_get_boot_info(struct boot_memory_info *mem_info) {
 }
 
 /**
- * @brief Handle out-of-memory situation
+ * @brief Emergency memory allocation for panic situations
  * @param size Size that failed to allocate
  */
 void mm_oom_handler(size_t size) {
@@ -1184,8 +1221,185 @@ void mm_oom_handler(size_t size) {
             printk(KERN_ERR "Unable to reclaim enough memory\n");
             mm_dump_state();
         }
+    } else if (early_mm_is_active()) {
+        printk(KERN_ERR "OOM during early boot with advanced allocators\n");
+        early_print_stats();
+        
+        /* Try emergency allocation */
+        void *emergency_ptr = early_emergency_alloc(size);
+        if (emergency_ptr) {
+            printk(KERN_EMERG "Emergency allocation succeeded\n");
+        } else {
+            printk(KERN_EMERG "Emergency allocation failed - system critical\n");
+        }
     } else {
         printk(KERN_ERR "OOM during early boot - system may be unstable\n");
     }
+}
+
+/* ========================================================================
+ * EARLY MEMORY ALLOCATOR INTERFACE FUNCTIONS
+ * ======================================================================== */
+
+/**
+ * @brief Allocate memory with early allocator flags
+ * @param size Size in bytes
+ * @param flags Early allocation flags
+ * @return Pointer to allocated memory, or NULL on failure
+ */
+void *mm_early_alloc_flags(size_t size, uint32_t flags) {
+    if (early_mm_is_active()) {
+        return early_malloc(size, flags);
+    } else {
+        /* Legacy mode doesn't support flags */
+        if (flags & EARLY_FLAG_ZERO) {
+            void *ptr = legacy_early_alloc(size);
+            if (ptr) {
+                memset(ptr, 0, size);
+            }
+            return ptr;
+        } else {
+            return legacy_early_alloc(size);
+        }
+    }
+}
+
+/**
+ * @brief Allocate zeroed memory with early allocator
+ * @param size Size in bytes
+ * @return Pointer to allocated memory, or NULL on failure
+ */
+void *mm_early_calloc(size_t size) {
+    return mm_early_alloc_flags(size, EARLY_FLAG_ZERO);
+}
+
+/**
+ * @brief Allocate aligned memory with early allocator
+ * @param size Size in bytes
+ * @param alignment Alignment requirement
+ * @return Pointer to allocated memory, or NULL on failure
+ */
+void *mm_early_alloc_aligned(size_t size, size_t alignment) {
+    if (early_mm_is_active()) {
+        return early_malloc_aligned(size, alignment);
+    } else {
+        /* Legacy allocator only supports basic alignment */
+        return legacy_early_alloc(size);
+    }
+}
+
+/**
+ * @brief Check if advanced early memory management is active
+ * @return true if active, false otherwise
+ */
+bool mm_early_is_advanced(void) {
+    return early_mm_is_active();
+}
+
+/**
+ * @brief Get early memory allocator statistics
+ * @param stats_out Pointer to structure to fill with statistics
+ */
+void mm_get_early_stats(struct early_alloc_stats *stats_out) {
+    if (early_mm_is_active()) {
+        early_get_stats(stats_out);
+    } else {
+        /* Provide basic stats for legacy mode */
+        if (stats_out) {
+            memset(stats_out, 0, sizeof(struct early_alloc_stats));
+            stats_out->bootstrap_allocs = 1;  /* Approximate */
+            stats_out->total_allocated = legacy_pool_offset;
+            stats_out->current_usage = legacy_pool_offset;
+            stats_out->peak_usage = legacy_pool_offset;
+        }
+    }
+}
+
+/**
+ * @brief Print early memory allocator statistics
+ */
+void mm_print_early_stats(void) {
+    if (early_mm_is_active()) {
+        early_print_stats();
+    } else {
+        printk(KERN_INFO "=== Legacy Early Memory Statistics ===\n");
+        printk(KERN_INFO "Pool size:   %d bytes\n", LEGACY_EARLY_POOL_SIZE);
+        printk(KERN_INFO "Used:        %zu bytes (%.1f%%)\n", 
+               legacy_pool_offset, 
+               (float)legacy_pool_offset * 100.0f / LEGACY_EARLY_POOL_SIZE);
+        printk(KERN_INFO "Free:        %zu bytes\n", 
+               LEGACY_EARLY_POOL_SIZE - legacy_pool_offset);
+        printk(KERN_INFO "Exhausted:   %s\n", legacy_pool_exhausted ? "yes" : "no");
+        printk(KERN_INFO "======================================\n");
+    }
+}
+
+/**
+ * @brief Check early memory allocator integrity
+ * @return true if all allocators are consistent, false otherwise
+ */
+bool mm_check_early_integrity(void) {
+    if (early_mm_is_active()) {
+        return early_check_integrity();
+    } else {
+        /* Basic checks for legacy mode */
+        if (legacy_pool_offset > LEGACY_EARLY_POOL_SIZE) {
+            printk(KERN_ERR "Legacy early pool overflow detected\n");
+            return false;
+        }
+        return true;
+    }
+}
+
+/**
+ * @brief Get total early memory managed
+ * @return Total memory in bytes
+ */
+size_t mm_get_early_total_memory(void) {
+    if (early_mm_is_active()) {
+        return early_get_total_memory();
+    } else {
+        return LEGACY_EARLY_POOL_SIZE;
+    }
+}
+
+/**
+ * @brief Get available early memory
+ * @return Available memory in bytes
+ */
+size_t mm_get_early_available_memory(void) {
+    if (early_mm_is_active()) {
+        return early_get_available_memory();
+    } else {
+        return LEGACY_EARLY_POOL_SIZE - legacy_pool_offset;
+    }
+}
+
+/**
+ * @brief Force transition from legacy to advanced early allocator
+ * @return 0 on success, negative error code on failure
+ */
+int mm_transition_to_advanced_early(void) {
+    if (early_mm_is_active()) {
+        printk(KERN_INFO "Advanced early allocators already active\n");
+        return MM_SUCCESS;
+    }
+    
+    printk(KERN_INFO "Transitioning to advanced early memory allocators\n");
+    
+    /* Initialize advanced early allocators */
+    int ret = early_mm_init();
+    if (ret != 0) {
+        printk(KERN_ERR "Failed to initialize advanced early allocators: %d\n", ret);
+        return MM_ERR_INIT;
+    }
+    
+    /* Mark legacy pool as exhausted to prevent further use */
+    legacy_pool_exhausted = true;
+    
+    printk(KERN_INFO "Transition to advanced early allocators completed\n");
+    early_print_stats();
+    
+    return MM_SUCCESS;
 }
 
