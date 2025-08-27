@@ -255,7 +255,7 @@ static swap_io_request_t *alloc_io_request(void) {
     
     if (!req) {
         /* Allouer dynamiquement si pool vide */
-        req = (swap_io_request_t *)kmalloc(sizeof(swap_io_request_t), GFP_KERNEL);
+        req = (swap_io_request_t *)kmalloc(sizeof(swap_io_request_t));
     }
     
     if (req) {
@@ -425,8 +425,7 @@ static uint32_t cluster_queue_requests(io_queue_t *queue) {
             
             /* Allouer nouveau buffer combiné */
             void **combined_buffers = (void **)kmalloc(
-                (current->page_count + next->page_count) * sizeof(void *), 
-                GFP_KERNEL);
+                (current->page_count + next->page_count) * sizeof(void *));
                 
             if (combined_buffers) {
                 /* Copier les pointeurs de buffers */
@@ -592,7 +591,7 @@ int swap_io_read_pages(uint32_t device_id, uint64_t offset, uint32_t page_count,
     req->private_data = private_data;
     
     /* Allouer et copier les pointeurs de buffers */
-    req->page_buffers = (void **)kmalloc(page_count * sizeof(void *), GFP_KERNEL);
+    req->page_buffers = (void **)kmalloc(page_count * sizeof(void *));
     if (!req->page_buffers) {
         free_io_request(req);
         return -1;
@@ -653,7 +652,7 @@ int swap_io_write_pages(uint32_t device_id, uint64_t offset, uint32_t page_count
     req->private_data = private_data;
     
     /* Allouer et copier les pointeurs de buffers */
-    req->page_buffers = (void **)kmalloc(page_count * sizeof(void *), GFP_KERNEL);
+    req->page_buffers = (void **)kmalloc(page_count * sizeof(void *));
     if (!req->page_buffers) {
         free_io_request(req);
         return -1;

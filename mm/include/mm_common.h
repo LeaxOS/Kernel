@@ -155,6 +155,11 @@ typedef enum {
     MM_ERROR_LOCKED = -12           /* Memory locked */
 } mm_error_t;
 
+/* Compatibility mappings for older code */
+#ifndef MM_ERROR_NO_MEMORY
+#define MM_ERROR_NO_MEMORY MM_ERROR_NOMEM
+#endif
+
 /* ========================================================================
  * COMMON MAGIC NUMBERS
  * ======================================================================== */

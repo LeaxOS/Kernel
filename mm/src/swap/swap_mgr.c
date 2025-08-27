@@ -344,7 +344,7 @@ static int init_swap_device(swap_device_t *device, const char *name,
     
     /* Allouer le bitmap */
     device->bitmap_size = (size_pages + 7) / 8;
-    device->bitmap = (uint8_t *)kmalloc(device->bitmap_size, GFP_KERNEL);
+    device->bitmap = (uint8_t *)kmalloc(device->bitmap_size);
     if (!device->bitmap) {
         printk(KERN_ERR "Failed to allocate swap bitmap for %s\n", name);
         return -1;

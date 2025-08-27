@@ -23,21 +23,10 @@
 #include "../../include/mm.h"
 
 /* ========================================================================
- * GUARD PAGE STRUCTURES
+ * INTERNAL GUARD PAGE STRUCTURES
  * ======================================================================== */
 
-/** Guard page types */
-typedef enum {
-    GUARD_TYPE_STACK_OVERFLOW,     /**< Stack overflow protection */
-    GUARD_TYPE_STACK_UNDERFLOW,    /**< Stack underflow protection */
-    GUARD_TYPE_HEAP_OVERFLOW,      /**< Heap overflow protection */
-    GUARD_TYPE_HEAP_UNDERFLOW,     /**< Heap underflow protection */
-    GUARD_TYPE_BUFFER_OVERFLOW,    /**< Buffer overflow protection */
-    GUARD_TYPE_CANARY,             /**< Canary page */
-    GUARD_TYPE_CUSTOM              /**< Custom guard page */
-} guard_type_t;
-
-/** Guard page structure */
+/** Internal guard page structure */
 typedef struct guard_page {
     void *address;                 /**< Guard page address */
     size_t size;                   /**< Guard page size */
@@ -99,7 +88,7 @@ static guard_page_t *find_guard_page(void *addr) {
  */
 static guard_page_t *allocate_guard_page(void) {
     /* In a real implementation, this would use a slab allocator */
-    guard_page_t *guard = kmalloc(sizeof(guard_page_t), GFP_KERNEL);
+    guard_page_t *guard = kmalloc(sizeof(guard_page_t));
     if (guard) {
         memset(guard, 0, sizeof(*guard));
     }
@@ -504,7 +493,7 @@ void print_guard_page_info(void *addr) {
     guard_page_info_t info;
     
     if (get_guard_page_info(addr, &info) != MM_SUCCESS) {
-        printk(KERN_ERROR "Guard: No guard page at address %p\n", addr);
+    printk(KERN_ERR "Guard: No guard page at address %p\n", addr);
         return;
     }
     

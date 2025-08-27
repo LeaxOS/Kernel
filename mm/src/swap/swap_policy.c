@@ -274,7 +274,7 @@ static page_policy_info_t *alloc_page_info(void) {
     POLICY_UNLOCK();
     
     if (!info) {
-        info = (page_policy_info_t *)kmalloc(sizeof(page_policy_info_t), GFP_KERNEL);
+        info = (page_policy_info_t *)kmalloc(sizeof(page_policy_info_t));
     }
     
     if (info) {
@@ -872,7 +872,7 @@ int swap_policy_remove_page(uint64_t page_frame) {
  */
 static swap_policy_interface_t *init_lru_policy(void) {
     swap_policy_interface_t *policy = (swap_policy_interface_t *)
-        kmalloc(sizeof(swap_policy_interface_t), GFP_KERNEL);
+        kmalloc(sizeof(swap_policy_interface_t));
     
     if (!policy) {
         return NULL;
@@ -880,7 +880,7 @@ static swap_policy_interface_t *init_lru_policy(void) {
     
     /* Allouer données privées */
     lru_private_data_t *lru_data = (lru_private_data_t *)
-        kmalloc(sizeof(lru_private_data_t), GFP_KERNEL);
+        kmalloc(sizeof(lru_private_data_t));
     
     if (!lru_data) {
         kfree(policy);
@@ -968,7 +968,7 @@ int swap_policy_init(void) {
     /* Allouer la hash table */
     policy_mgr.hash_size = 1024;
     policy_mgr.page_hash = (page_policy_info_t **)
-        kmalloc(policy_mgr.hash_size * sizeof(page_policy_info_t *), GFP_KERNEL);
+        kmalloc(policy_mgr.hash_size * sizeof(page_policy_info_t *));
     
     if (!policy_mgr.page_hash) {
         printk(KERN_ERR "Failed to allocate page hash table\n");

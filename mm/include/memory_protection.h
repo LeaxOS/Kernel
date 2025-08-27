@@ -228,11 +228,11 @@ mm_error_t make_executable(void *addr, size_t size);
 /**
  * @brief Create protection domain
  * @param name Domain name
- * @param access_rights Access rights mask
  * @param flags Domain flags
- * @return Domain ID or negative error code
+ * @param domain_id Output domain ID
+ * @return MM_SUCCESS on success, error code on failure
  */
-int create_protection_domain(const char *name, uint32_t access_rights, uint32_t flags);
+mm_error_t create_protection_domain(const char *name, uint32_t flags, protection_domain_t *domain_id);
 
 /**
  * @brief Destroy protection domain
@@ -264,8 +264,152 @@ protection_domain_t get_current_domain(void);
 mm_error_t assign_memory_to_domain(void *addr, size_t size, protection_domain_t domain_id);
 
 /* ========================================================================
+ * GUARD PAGE TYPES AND CONSTANTS
+ * ======================================================================== */
+
+/** Guard page flags */
+typedef uint32_t guard_page_flags_t;
+#define GUARD_FLAG_STACK   0x01U    /**< Stack guard page */
+#define GUARD_FLAG_HEAP    0x02U    /**< Heap guard page */
+#define GUARD_FLAG_CANARY  0x04U    /**< Canary guard page */
+
+/** Guard page types */
+typedef enum {
+    GUARD_TYPE_STACK_OVERFLOW,     /**< Stack overflow protection */
+    GUARD_TYPE_STACK_UNDERFLOW,    /**< Stack underflow protection */
+    GUARD_TYPE_HEAP_OVERFLOW,      /**< Heap overflow protection */
+    GUARD_TYPE_HEAP_UNDERFLOW,     /**< Heap underflow protection */
+    GUARD_TYPE_BUFFER_OVERFLOW,    /**< Buffer overflow protection */
+    GUARD_TYPE_CANARY,             /**< Canary page */
+    GUARD_TYPE_CUSTOM              /**< Custom guard page */
+} guard_type_t;
+
+/** Guard page information structure */
+typedef struct guard_page_info {
+    void *address;                 /**< Guard page address */
+    size_t size;                   /**< Guard page size */
+    guard_page_flags_t flags;      /**< Guard page flags */
+    char description[64];          /**< Description */
+    uint64_t creation_time;        /**< Creation timestamp */
+    uint64_t access_count;         /**< Access attempts */
+    uint64_t violation_count;      /**< Violations detected */
+    bool active;                   /**< Guard is active */
+} guard_page_info_t;
+
+/** Guard page statistics structure */
+typedef struct guard_page_stats {
+    uint64_t total_guards;         /**< Total guard pages created */
+    uint64_t active_guards;        /**< Active guard pages */
+    uint64_t stack_guards;         /**< Stack guard pages */
+    uint64_t heap_guards;          /**< Heap guard pages */
+    uint64_t canary_guards;        /**< Canary guard pages */
+    uint64_t total_violations;     /**< Total violations */
+    uint64_t stack_violations;     /**< Stack violations */
+    uint64_t heap_violations;      /**< Heap violations */
+    uint64_t buffer_violations;    /**< Buffer violations */
+} guard_page_stats_t;
+
+/* ========================================================================
  * GUARD PAGE FUNCTIONS
  * ======================================================================== */
+
+/**
+ * @brief Initialize guard page system
+ * @return MM_SUCCESS on success, error code on failure
+ */
+mm_error_t guard_pages_init(void);
+
+/**
+ * @brief Shutdown guard page system
+ */
+void guard_pages_shutdown(void);
+
+/**
+ * @brief Create a guard page
+ * @param addr Page address
+ * @param size Page size
+ * @param flags Guard flags
+ * @param description Optional description
+ * @return MM_SUCCESS on success, error code on failure
+ */
+mm_error_t create_guard_page(void *addr, size_t size, guard_page_flags_t flags, const char *description);
+
+/**
+ * @brief Remove a guard page
+ * @param addr Page address
+ * @return MM_SUCCESS on success, error code on failure
+ */
+mm_error_t remove_guard_page(void *addr);
+
+/**
+ * @brief Create stack guard page
+ * @param stack_base Stack base address
+ * @param stack_size Stack size
+ * @return MM_SUCCESS on success, error code on failure
+ */
+mm_error_t create_stack_guard(void *stack_base, size_t stack_size);
+
+/**
+ * @brief Create heap guard pages
+ * @param heap_ptr Heap pointer
+ * @param size Heap size
+ * @return MM_SUCCESS on success, error code on failure
+ */
+mm_error_t create_heap_guard(void *heap_ptr, size_t size);
+
+/**
+ * @brief Create canary page
+ * @param addr Page address
+ * @param description Description
+ * @return MM_SUCCESS on success, error code on failure
+ */
+mm_error_t create_canary_page(void *addr, const char *description);
+
+/**
+ * @brief Check if address is a guard page
+ * @param addr Address to check
+ * @return true if guard page, false otherwise
+ */
+bool is_guard_page(void *addr);
+
+/**
+ * @brief Handle guard page violation
+ * @param addr Violation address
+ * @param error_code Error code
+ * @return true if handled, false if fatal
+ */
+bool handle_guard_page_violation(void *addr, uint32_t error_code);
+
+/**
+ * @brief Get guard page information
+ * @param addr Page address
+ * @param info Output information structure
+ * @return MM_SUCCESS on success, error code on failure
+ */
+mm_error_t get_guard_page_info(void *addr, guard_page_info_t *info);
+
+/**
+ * @brief Get guard page statistics
+ * @param stats Output statistics structure
+ * @return MM_SUCCESS on success, error code on failure
+ */
+mm_error_t get_guard_stats(guard_page_stats_t *stats);
+
+/**
+ * @brief Print guard page information
+ * @param addr Page address
+ */
+void print_guard_page_info(void *addr);
+
+/**
+ * @brief Print all guard pages
+ */
+void print_all_guard_pages(void);
+
+/**
+ * @brief Print guard page statistics
+ */
+void print_guard_stats(void);
 
 /**
  * @brief Create guard pages around allocation

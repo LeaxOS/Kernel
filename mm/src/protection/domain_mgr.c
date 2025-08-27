@@ -22,12 +22,60 @@
 #include "../../include/memory_protection.h"
 #include "../../include/mm.h"
 
+/* Define protection_domain_info_t if not defined in included headers */
+#ifndef PROTECTION_DOMAIN_INFO_T_DEFINED
+typedef struct protection_domain_info {
+    domain_id_t id;
+    char name[32];
+    uint32_t flags;
+    uint32_t protection_key;
+    uint64_t page_count;
+    uint64_t total_size;
+    uint64_t creation_time;
+    uint64_t access_count;
+    uint64_t violation_count;
+} protection_domain_info_t;
+#define PROTECTION_DOMAIN_INFO_T_DEFINED
+#endif
+
+/* Define missing error code if not present in headers */
+#ifndef MM_ERROR_NO_MEMORY
+#define MM_ERROR_NO_MEMORY 5
+#endif
+
+/* Define kernel log level macros if not already defined */
+#ifndef KERN_ERROR
+#define KERN_ERROR   "<3>"
+#endif
+#ifndef KERN_WARNING
+#define KERN_WARNING "<4>"
+#endif
+#ifndef KERN_INFO
+#define KERN_INFO    "<6>"
+#endif
+#ifndef KERN_DEBUG
+#define KERN_DEBUG   "<7>"
+#endif
+
+/* Define domain_id_t if not defined in included headers */
+#ifndef DOMAIN_ID_T_DEFINED
+typedef uint32_t domain_id_t;
+#define DOMAIN_ID_T_DEFINED
+#endif
+
+/* Define missing domain flag for disabling PKU if not present */
+#ifndef DOMAIN_FLAG_NO_PKU
+#define DOMAIN_FLAG_NO_PKU 0x2
+#endif
+
 /* ========================================================================
  * DOMAIN MANAGEMENT STRUCTURES
  * ======================================================================== */
 
 /** Maximum number of protection domains */
 #define MAX_PROTECTION_DOMAINS  256
+
+#define DOMAIN_FLAG_DEFAULT     0x1
 
 /** Domain structure */
 typedef struct protection_domain {
