@@ -129,6 +129,8 @@ typedef struct swap_cache {
     uint64_t miss_count;                /* Misses du cache */
     uint64_t eviction_count;            /* Évictions */
     uint64_t compression_count;         /* Pages compressées */
+    uint64_t decompressions;            /* Pages décompressées */
+    uint64_t total_requests;            /* Requêtes totales */
     uint64_t dedup_count;               /* Pages dédupliquées */
     
     /* Readahead */
@@ -474,7 +476,7 @@ static swap_cache_entry_t *alloc_cache_entry(void) {
         swap_cache.free_count--;
     } else {
         /* Allouer dynamiquement */
-        entry = (swap_cache_entry_t *)kmalloc(sizeof(swap_cache_entry_t), GFP_KERNEL);
+    entry = (swap_cache_entry_t *)kmalloc(sizeof(swap_cache_entry_t));
     }
     
     if (entry) {
@@ -770,7 +772,7 @@ int swap_cache_insert(uint32_t device_id, uint32_t offset, const void *data) {
     if (!entry->page_data) {
         /* Compression */
         if (enable_compression) {
-            void *compressed_data = kmalloc(PAGE_SIZE, GFP_KERNEL);
+            void *compressed_data = kmalloc(PAGE_SIZE);
             if (compressed_data) {
                 size_t compressed_size = compress_page(data, PAGE_SIZE, compressed_data, PAGE_SIZE);
                 if (compressed_size > 0 && compressed_size < PAGE_SIZE) {
@@ -791,7 +793,7 @@ int swap_cache_insert(uint32_t device_id, uint32_t offset, const void *data) {
         
         /* Copie normale si compression échouée */
         if (!entry->page_data) {
-            entry->page_data = kmalloc(PAGE_SIZE, GFP_KERNEL);
+            entry->page_data = kmalloc(PAGE_SIZE);
             if (!entry->page_data) {
                 free_cache_entry(entry);
                 CACHE_UNLOCK();
@@ -908,7 +910,7 @@ void swap_cache_get_stats(swap_cache_stats_t *stats) {
     
     CACHE_LOCK();
     
-    stats->total_requests = swap_cache.hit_count + swap_cache.miss_count;
+    stats->total_requests = swap_cache.total_requests;
     stats->cache_hits = swap_cache.hit_count;
     stats->cache_misses = swap_cache.miss_count;
     stats->evictions = swap_cache.eviction_count;
