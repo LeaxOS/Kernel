@@ -8,8 +8,8 @@
 #ifndef MM_SETUP_H
 #define MM_SETUP_H
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
+#include "stdint.h"
+#include "stddef.h"
 
 /**
  * @brief Structure de configuration pour l'initialisation MM

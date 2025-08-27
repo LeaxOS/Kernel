@@ -1,52 +1,39 @@
 /**
  * @file kmalloc.c
- * @brief Allocateur kernel (style malloc) - Interface générale d'allocation mémoire
+ * @brief Allocateur memoire principal du kernel LeaxOS
  * 
- * Ce fichier implémente l'interface principale d'allocation mémoire pour le
- * kernel LeaxOS. Il fournit une API compatible malloc/free avec des extensions
- * spécifiques au kernel:
- * 
- * - kmalloc() / kfree() : Allocation/libération standard
- * - kcalloc() : Allocation avec zéro-initialisation
- * - krealloc() : Redimensionnement d'allocation
- * - kstrdup() : Duplication de chaînes
- * - Support des flags GFP (Get Free Pages)
- * - Gestion des tailles variables (8 bytes à plusieurs MB)
- * - Intégration avec SLAB/SLUB et buddy allocator
- * - Détection des fuites mémoire et corruption
- * - Statistiques et métriques détaillées
- * 
- * L'allocateur route automatiquement les demandes vers le meilleur
- * sous-allocateur selon la taille et les contraintes.
+ * Implementation de l'interface kmalloc/kfree pour le kernel.
+ * Fournit une allocation efficace et robuste avec support:
+ * - Allocation rapide pour objets de taille variable
+ * - Integration avec allocateurs SLAB et buddy system
+ * - Detection automatique de corruption memoire
+ * - Metriques de performance et debug
  * 
  * @author LeaxOS Team
  * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/slab.h"
-#include "../../include/vmalloc.h"
-#include "../../include/page_alloc.h"
-#include "../physical/phys_page.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm_types.h"
+#include "mm.h"
+#include "slab.h"
+#include "vmalloc.h"
+#include "page_alloc.h"
 
 /* ========================================================================
- * CONSTANTS AND CONFIGURATION
+ * CONFIGURATION
  * ======================================================================== */
 
-/* Limites de tailles */
-#define KMALLOC_MIN_SIZE        8           /* Taille minimale */
-#define KMALLOC_MAX_SIZE        (32 * 1024 * 1024) /* 32MB maximum */
-#define KMALLOC_LARGE_THRESHOLD (PAGE_SIZE * 2)     /* Seuil grandes allocs */
-#define KMALLOC_HUGE_THRESHOLD  (PAGE_SIZE * 16)    /* Seuil énormes allocs */
+#define KMALLOC_MIN_SIZE        8
+#define KMALLOC_MAX_SIZE        (32 * 1024 * 1024)
+#define KMALLOC_LARGE_THRESHOLD (PAGE_SIZE * 2)
 
-/* Tailles de caches SLAB prédéfinies */
 #define KMALLOC_CACHE_COUNT     13
 static const size_t kmalloc_cache_sizes[KMALLOC_CACHE_COUNT] = {
     8, 16, 32, 64, 96, 128, 192, 256, 512, 1024, 2048, 4096, 8192
@@ -434,7 +421,7 @@ static void *kmalloc_internal(size_t size, gfp_flags_t flags, const char *file, 
     } else {
         /* Utiliser allocateur de pages pour grandes allocations */
         size_t pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
-        uint64_t phys_addr = pmm_alloc_pages(pages);
+        uint64_t phys_addr = pmm_alloc_pages(pages, GFP_KERNEL);
         if (phys_addr) {
             ptr = (void *)phys_to_virt(phys_addr);
             alloc_flags |= KMALLOC_FLAG_PAGES;

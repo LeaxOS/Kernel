@@ -74,7 +74,7 @@ extern "C" {
     #define ALWAYS_INLINE           __attribute__((always_inline)) inline
     #define NEVER_INLINE            __attribute__((noinline))
 #elif defined(_MSC_VER)
-    #include <intrin.h>
+    #include "intrin.h"
     #define COMPILER_BARRIER()      _ReadWriteBarrier()
     #define LIKELY(x)               (x)
     #define UNLIKELY(x)             (x)

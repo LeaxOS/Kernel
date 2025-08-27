@@ -1,26 +1,49 @@
 /**
  * @file violation_handler.c
- * @brief Implémentation du gestionnaire de violations de protection mémoire pour LeaxOS
- * 
- * Ce fichier implémente la gestion des violations de protection mémoire :
- * - Traitement des exceptions de page fault
- * - Classification des violations
- * - Actions correctives automatiques
- * - Logging et reporting
+ * @brief Memory protection violation handler
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/memory_protection.h"
-#include "../../include/mm.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "memory_protection.h" // Ensure this header defines violation_type_t
+#include "mm.h"
+
+/* Define kernel log level macros if not already defined */
+#ifndef KERN_ERROR
+#define KERN_ERROR "[ERROR] "
+#endif
+#ifndef KERN_WARNING
+#define KERN_WARNING "[WARNING] "
+#endif
+#ifndef KERN_INFO
+#define KERN_INFO "[INFO] "
+#endif
+#ifndef KERN_DEBUG
+#define KERN_DEBUG "[DEBUG] "
+#endif
+
+// If violation_type_t is not defined in any included header, define it here:
+#ifndef VIOLATION_TYPE_T_DEFINED
+typedef enum {
+    PROT_VIOLATION_READ,
+    PROT_VIOLATION_WRITE,
+    PROT_VIOLATION_EXEC,
+    PROT_VIOLATION_USER,
+    PROT_VIOLATION_STACK,
+    PROT_VIOLATION_HEAP,
+    PROT_VIOLATION_GUARD,
+    PROT_VIOLATION_DOMAIN,
+    PROT_VIOLATION_MAX
+} violation_type_t;
+#define VIOLATION_TYPE_T_DEFINED
+#endif
 
 /* ========================================================================
  * VIOLATION HANDLER STRUCTURES
@@ -77,6 +100,16 @@ static violation_action_t g_default_actions[PROT_VIOLATION_MAX] = {
     [PROT_VIOLATION_GUARD] = VIOLATION_ACTION_TERMINATE,
     [PROT_VIOLATION_DOMAIN] = VIOLATION_ACTION_TERMINATE
 };
+
+/** Violation statistics structure for external use */
+typedef struct violation_stats {
+    uint64_t total_violations;
+    uint64_t handled_violations;
+    uint64_t terminated_processes;
+    uint64_t recovered_violations;
+    uint64_t ignored_violations;
+    uint64_t by_type[PROT_VIOLATION_MAX];
+} violation_stats_t;
 
 /** Violation statistics */
 static struct {
@@ -282,11 +315,13 @@ static bool execute_violation_action(protection_violation_t *violation, violatio
     
     switch (action) {
     case VIOLATION_ACTION_TERMINATE:
+    {
+        const char *reason = (violation->type < PROT_VIOLATION_MAX) ? "protection" : "unknown";
         printk(KERN_ERROR "Violation: Terminating process due to %s violation at 0x%llx\n",
-               (violation->type < PROT_VIOLATION_MAX) ? 
-               "protection" : "unknown", violation->address);
+               reason, violation->address);
         g_violation_stats.terminated_processes++;
         return false;  /* Process should be terminated */
+    }
         
     case VIOLATION_ACTION_SIGNAL:
         printk(KERN_WARNING "Violation: Sending signal for violation at 0x%llx\n",
@@ -369,7 +404,7 @@ mm_error_t register_violation_handler(violation_type_t type, protection_violatio
     }
     
     /* Allocate handler entry */
-    violation_handler_entry_t *entry = kmalloc(sizeof(violation_handler_entry_t), GFP_KERNEL);
+    violation_handler_entry_t *entry = kmalloc(sizeof(violation_handler_entry_t));
     if (!entry) {
         return MM_ERROR_NO_MEMORY;
     }

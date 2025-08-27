@@ -1,34 +1,19 @@
 /**
  * @file swap_mgr.c
- * @brief Gestionnaire principal du système de swap de LeaxOS
- * 
- * Ce fichier implémente le gestionnaire central du système de swap qui
- * coordonne les différents aspects du swapping : allocation d'espace swap,
- * politique de sélection des pages, interaction avec les devices de swap,
- * et optimisations pour les performances.
- * 
- * Fonctionnalités principales:
- * - Gestion des espaces de swap multiples
- * - Allocation et libération d'entrées swap
- * - Politique de sélection des pages à swapper
- * - Interface avec les drivers de stockage
- * - Statistiques et monitoring du swap
- * - Optimisations pour réduire les I/O
- * - Gestion des priorités de swap
+ * @brief Swap subsystem manager
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "page_alloc.h"
 
 
 /* ========================================================================

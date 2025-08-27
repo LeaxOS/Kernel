@@ -1,13 +1,14 @@
 /**
  * @file page_alloc.c
- * @brief Allocateur de pages physiques
+ * @brief Physical page allocator
  * 
- * Interface haut niveau pour l'allocation de pages physiques
+ * @author LeaxOS Team
+ * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../include/page_alloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "page_alloc.h"
 #include "phys_page.h"
 
 /**

@@ -1,34 +1,20 @@
 /**
  * @file slab_allocator.c
- * @brief Implémentation de l'allocateur SLAB pour LeaxOS
- * 
- * Ce fichier implémente un allocateur SLAB sophistiqué pour la gestion
- * efficace d'objets de taille fixe. L'allocateur SLAB réduit la fragmentation
- * et améliore les performances en pré-allouant des objets fréquemment utilisés.
- * 
- * Fonctionnalités principales:
- * - Caches d'objets de taille fixe
- * - Gestion automatique des slabs pleins/partiels/vides
- * - Support pour constructeurs/destructeurs d'objets
- * - Coloration pour améliorer l'utilisation du cache CPU
- * - Statistiques détaillées et debugging
- * - Support SMP avec caches per-CPU
- * - Détection de corruption et debug avancé
+ * @brief SLAB allocator implementation
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
-#include "../../include/slab.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "page_alloc.h"
+#include "slab.h"
 
 /* Fallback GFP definitions if not included properly */
 #ifndef GFP_ZERO

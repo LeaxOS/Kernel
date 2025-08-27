@@ -1,24 +1,24 @@
 /**
  * @file mm_init.c
- * @brief Memory Management Initialization
+ * @brief Initialisation du gestionnaire memoire LeaxOS
  * 
- * This file contains the initialization code for the LeaxOS memory management
- * subsystem. It coordinates the initialization of all memory management 
- * components including:
- * - Physical page allocator
- * - Slab allocator for fixed-size objects
- * - Virtual memory allocator (vmalloc)
- * - Memory mapping subsystem (mmap)
- * - Memory barriers and synchronization
- * 
- * The initialization follows a specific order to ensure proper dependencies
- * and provides comprehensive error handling and recovery mechanisms.
+ * Ce module coordonne l'initialisation de tous les composants
+ * du gestionnaire memoire dans l'ordre correct:
+ * - Allocateur de pages physiques
+ * - Allocateur SLAB pour objets fixes
+ * - Allocateur memoire virtuelle
+ * - Systeme de mapping memoire
  * 
  * @author LeaxOS Team
  * @date 2025
  * @version 1.0
  */
 
+#include "stdint.h"
+#include "stdbool.h"
+#include "stddef.h"
+#include "string.h"
+#include "stdio.h"
 #include "mm.h"
 #include "early_malloc.h"
 #include "page_alloc.h"
@@ -26,18 +26,11 @@
 #include "vmalloc.h"
 #include "mmap.h"
 #include "memory_barriers.h"
-#include "stdint.h"
-#include "stdbool.h"
-#include "stddef.h"
-#include "string.h"
-#include "stdio.h"
-
 
 /* ========================================================================
- * GLOBAL VARIABLES AND STATE
+ * STATE MANAGEMENT
  * ======================================================================== */
 
-/** Memory management initialization state */
 static bool mm_initialized = false;
 static bool main_mm_active = false;
 static mm_config_t current_config;

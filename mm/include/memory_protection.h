@@ -1,17 +1,8 @@
 /**
  * @file memory_protection.h
- * @brief Interface de protection mémoire pour LeaxOS
- * 
- * Ce header définit l'interface pour le système de protection mémoire
- * du noyau LeaxOS, incluant :
- * - Protection des pages (lecture/écriture/exécution)
- * - Gestion des domaines de protection
- * - Contrôle d'accès basé sur les privilèges
- * - Protection contre l'exécution (NX/XD)
- * - SMEP/SMAP et autres fonctionnalités avancées
+ * @brief Memory protection interface
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
@@ -93,6 +84,8 @@ typedef struct protection_violation {
     prot_violation_type_t type;     /**< Violation type */
     uint64_t address;               /**< Faulting address */
     uint64_t ip;                    /**< Instruction pointer */
+    uint32_t error_code;            /**< Hardware/error code (e.g., page fault error code) */
+    int32_t severity;               /**< Severity level (0=low .. 3=critical) */
     protection_domain_t domain;     /**< Current domain */
     uint32_t attempted_access;      /**< Attempted access type */
     uint32_t allowed_access;        /**< Allowed access type */

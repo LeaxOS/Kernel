@@ -1,26 +1,19 @@
 /**
  * @file domain_mgr.c
- * @brief Implémentation de la gestion des domaines de protection pour LeaxOS
- * 
- * Ce fichier implémente la gestion des domaines de protection mémoire :
- * - Création et destruction des domaines
- * - Assignation de pages aux domaines
- * - Protection Keys (PKU) sur x86-64
- * - Isolation entre domaines
+ * @brief Memory protection domain manager
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/memory_protection.h"
-#include "../../include/mm.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "memory_protection.h"
+#include "mm.h"
 
 /* Define protection_domain_info_t if not defined in included headers */
 #ifndef PROTECTION_DOMAIN_INFO_T_DEFINED

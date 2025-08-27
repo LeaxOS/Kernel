@@ -1,26 +1,19 @@
 /**
  * @file page_protection.c
- * @brief Implémentation de la protection de pages pour LeaxOS
- * 
- * Ce fichier implémente les mécanismes de protection au niveau des pages :
- * - Protection lecture/écriture/exécution
- * - Bits NX (No-Execute)
- * - Protection utilisateur/noyau
- * - Gestion des violations d'accès
+ * @brief Page protection mechanisms
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/memory_protection.h"
-#include "../../include/mm.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "memory_protection.h"
+#include "mm.h"
 
 /* ========================================================================
  * PAGE PROTECTION IMPLEMENTATION

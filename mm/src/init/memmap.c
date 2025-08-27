@@ -1,33 +1,18 @@
 /**
  * @file memmap.c
- * @brief Carte mémoire système - Gestion de la carte mémoire du système
- * 
- * Ce fichier gère l'analyse et l'interprétation de la carte mémoire fournie
- * par le bootloader (BIOS E820, UEFI memory map, etc.) pour identifier les
- * zones de mémoire disponibles, réservées et spéciales du système. Il fournit:
- * 
- * - Parsing des cartes mémoire multi-format (E820, UEFI, etc.)
- * - Classification des régions mémoire par type et usage
- * - Interface d'interrogation des zones mémoire disponibles
- * - Gestion des régions réservées et protection
- * - Statistiques et métriques mémoire système
- * - Validation et vérification de cohérence
- * 
- * Le gestionnaire de carte mémoire est l'un des premiers composants initialisés
- * et sert de base pour tous les autres allocateurs de mémoire.
+ * @brief System memory map management
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
 #include "mm_setup.h"
 
 

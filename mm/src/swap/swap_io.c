@@ -1,33 +1,19 @@
 /**
  * @file swap_io.c
- * @brief Gestionnaire d'I/O pour le système de swap de LeaxOS
- * 
- * Ce fichier implémente les opérations d'entrée/sortie pour le système
- * de swap, incluant la communication avec les drivers de stockage,
- * l'optimisation des accès disque, et la gestion des erreurs I/O.
- * 
- * Fonctionnalités principales:
- * - Interface avec les drivers de stockage bloc
- * - Gestion asynchrone des I/O
- * - Optimisation des accès séquentiels et clustering
- * - Gestion des erreurs et retry automatique
- * - Support pour différents types de stockage
- * - Statistiques détaillées des performances I/O
- * - Mécanismes de priorité et QoS
+ * @brief Swap I/O operations
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "page_alloc.h"
 
 
 /* ========================================================================

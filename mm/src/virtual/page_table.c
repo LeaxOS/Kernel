@@ -1,36 +1,19 @@
 /**
  * @file page_table.c
- * @brief Gestion des tables de pages - Interface bas niveau pour la MMU
- * 
- * Ce fichier implémente la gestion détaillée des tables de pages pour LeaxOS.
- * Il fournit une interface bas niveau pour manipuler les structures de données
- * de la MMU (Memory Management Unit) incluant:
- * 
- * - Création et destruction de tables de pages
- * - Mapping et unmapping de pages individuelles
- * - Gestion des permissions et attributs de pages
- * - Support multi-niveau (PGD, PUD, PMD, PTE)
- * - Optimisations pour différentes architectures
- * - Cache et invalidation TLB
- * - Support pour pages de différentes tailles
- * - Mécanismes de protection et sécurité
- * 
- * Le gestionnaire de tables de pages travaille en étroite collaboration
- * avec le VMM pour fournir les services de mémoire virtuelle.
+ * @brief Page table management implementation
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "page_alloc.h"
 #include "../physical/phys_page.h"
 
 

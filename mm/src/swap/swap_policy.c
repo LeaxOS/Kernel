@@ -1,54 +1,47 @@
 /**
  * @file swap_policy.c
- * @brief Gestionnaire de politiques de swap pour LeaxOS
- * 
- * Ce fichier implémente les différentes politiques de sélection de pages
- * pour le swap, incluant les algorithmes de remplacement, les heuristiques
- * de prédiction, et l'optimisation des décisions de swap.
- * 
- * Fonctionnalités principales:
- * - Algorithmes de remplacement (LRU, Clock, Working Set, etc.)
- * - Prédiction des patterns d'accès
- * - Optimisation basée sur la charge système
- * - Gestion des pages critiques et protégées
- * - Statistiques et métriques de performance
- * - Adaptation dynamique des politiques
- * - Support pour différents workloads
+ * @brief Swap policy management
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
-
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm_types.h"
+#include "mm.h"
+#include "page_alloc.h"
 
 /* ========================================================================
- * SWAP POLICY CONSTANTS AND DEFINITIONS
+ * CONSTANTS AND CONFIGURATION
  * ======================================================================== */
 
-/* Types de politiques de swap */
-#define POLICY_LRU              0x01    /* Least Recently Used */
-#define POLICY_CLOCK            0x02    /* Clock algorithm */
-#define POLICY_WORKING_SET      0x04    /* Working Set */
-#define POLICY_AGING            0x08    /* Aging algorithm */
-#define POLICY_RANDOM           0x10    /* Random selection */
-#define POLICY_FIFO             0x20    /* First In First Out */
-#define POLICY_LFU              0x40    /* Least Frequently Used */
-#define POLICY_ADAPTIVE         0x80    /* Adaptive policy */
+/** Types de politiques de swap disponibles */
+typedef enum {
+    SWAP_POLICY_LRU = 0,            /**< Least Recently Used */
+    SWAP_POLICY_CLOCK,              /**< Clock algorithm */
+    SWAP_POLICY_WORKING_SET,        /**< Working Set Model */
+    SWAP_POLICY_AGING,              /**< Aging algorithm */
+    SWAP_POLICY_RANDOM,             /**< Random selection */
+    SWAP_POLICY_FIFO,               /**< First In First Out */
+    SWAP_POLICY_LFU,                /**< Least Frequently Used */
+    SWAP_POLICY_ADAPTIVE,           /**< Adaptive hybrid policy */
+    SWAP_POLICY_COUNT
+} swap_policy_type_t;
 
-/* Priorités de pages */
-#define PAGE_PRIORITY_CRITICAL  0       /* Pages critiques (kernel) */
-#define PAGE_PRIORITY_HIGH      1       /* Pages importantes */
-#define PAGE_PRIORITY_NORMAL    2       /* Pages normales */
-#define PAGE_PRIORITY_LOW       3       /* Pages peu importantes */
+/** Niveaux de priorité des pages */
+typedef enum {
+    PAGE_PRIORITY_CRITICAL = 0, /**< Pages critiques (kernel core) */
+    PAGE_PRIORITY_HIGH,         /**< Pages importantes (drivers) */
+    PAGE_PRIORITY_NORMAL,       /**< Pages normales (user apps) */
+    PAGE_PRIORITY_LOW,          /**< Pages peu importantes (cache) */
+    PAGE_PRIORITY_BACKGROUND,   /**< Pages background (logs, temp) */
+    PAGE_PRIORITY_COUNT
+} page_priority_t;
 #define PAGE_PRIORITY_IDLE      4       /* Pages inactives */
 
 /* États des pages pour les politiques */
@@ -232,7 +225,7 @@ static policy_stats_t global_stats;
 
 /* Configuration */
 static bool debug_policy = false;
-static uint32_t default_policy = POLICY_LRU;
+static uint32_t default_policy = SWAP_POLICY_LRU;
 static uint32_t adaptation_interval = ADAPTATION_INTERVAL;
 
 /* Timestamp functions */
@@ -674,7 +667,7 @@ static float evaluate_policy_performance(swap_policy_interface_t *policy) {
  */
 static uint32_t select_adaptive_policy(void) {
     float best_score = 0.0f;
-    uint32_t best_policy = POLICY_LRU;
+    uint32_t best_policy = SWAP_POLICY_LRU;
     
     /* Évaluer toutes les politiques disponibles */
     for (uint32_t i = 0; i < policy_mgr.policy_count; i++) {
@@ -691,10 +684,10 @@ static uint32_t select_adaptive_policy(void) {
     /* Prendre en compte la pression mémoire */
     if (global_stats.memory_pressure > 0.8f) {
         /* Haute pression - favoriser LRU strict */
-        best_policy = POLICY_LRU;
+        best_policy = SWAP_POLICY_LRU;
     } else if (global_stats.memory_pressure < 0.3f) {
         /* Faible pression - working set peut être plus efficace */
-        best_policy = POLICY_WORKING_SET;
+        best_policy = SWAP_POLICY_WORKING_SET;
     }
     
     return best_policy;
@@ -892,7 +885,7 @@ static swap_policy_interface_t *init_lru_policy(void) {
     
     /* Configuration de la politique */
     strcpy(policy->name, "LRU");
-    policy->type = POLICY_LRU;
+    policy->type = SWAP_POLICY_LRU;
     policy->version = 1;
     
     /* Méthodes */
@@ -994,7 +987,7 @@ int swap_policy_init(void) {
     policy_mgr.policies[0] = lru_policy;
     policy_mgr.policy_count = 1;
     policy_mgr.active_policy = lru_policy;
-    policy_mgr.active_policy_type = POLICY_LRU;
+    policy_mgr.active_policy_type = SWAP_POLICY_LRU;
     
     swap_policy_initialized = true;
     

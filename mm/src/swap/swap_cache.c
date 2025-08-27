@@ -1,33 +1,19 @@
 /**
  * @file swap_cache.c
- * @brief Cache de pages swap pour optimiser les performances I/O
- * 
- * Ce fichier implémente un cache des pages swap pour réduire les accès
- * disque et améliorer les performances du système de mémoire virtuelle.
- * Le cache utilise des algorithmes sophistiqués pour la gestion des
- * pages en mémoire et l'anticipation des accès futurs.
- * 
- * Fonctionnalités principales:
- * - Cache LRU pour pages swap récemment utilisées
- * - Readahead prédicatif pour cluster de pages
- * - Writeback différé pour optimiser les écritures
- * - Compression optionnelle des pages
- * - Déduplication pour économiser la mémoire
- * - Statistiques détaillées et monitoring
+ * @brief Swap page cache implementation
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "page_alloc.h"
 
 
 /* ========================================================================

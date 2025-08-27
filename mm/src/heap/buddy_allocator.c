@@ -1,34 +1,19 @@
 /**
  * @file buddy_allocator.c
- * @brief Implémentation du Buddy System pour LeaxOS
- * 
- * Le Buddy System est un algorithme d'allocation de pages qui maintient
- * des listes libres de blocs de tailles exponentielles (2^n pages).
- * Il permet une allocation et libération efficaces tout en minimisant
- * la fragmentation externe.
- * 
- * Fonctionnalités principales:
- * - Allocation de blocs de 2^n pages (n = 0 à MAX_ORDER-1)
- * - Fusion automatique des blocs libres adjacents
- * - Gestion de zones mémoire multiples (DMA, Normal, HighMem)
- * - Anti-fragmentation avec types de migration
- * - Statistiques détaillées et monitoring
- * - Support pour allocations urgentes et atomiques
- * - Watermarks et gestion de la pression mémoire
+ * @brief Buddy system allocator for page allocation
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "page_alloc.h"
 
 
 /* ========================================================================
@@ -83,6 +68,12 @@
 /* ========================================================================
  * DATA STRUCTURES
  * ======================================================================== */
+
+/* Maximum number of NUMA nodes supported */
+#define MAX_NUMNODES 1
+
+/* Number of VM zone stat items (define as needed, e.g., 8) */
+#define NR_VM_ZONE_STAT_ITEMS 8
 
 /**
  * @brief Structure d'une page physique
@@ -148,7 +139,7 @@ typedef struct zone {
     uint64_t min_slab_pages;            /* Pages slab min */
     
     /* Per-CPU pages */
-    struct per_cpu_pages __percpu *pageset; /* Pages per-CPU */
+    struct per_cpu_pages *pageset; /* Pages per-CPU */
     
     /* État de la zone */
     bool enabled;                       /* Zone activée */

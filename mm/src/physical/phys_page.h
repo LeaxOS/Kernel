@@ -6,8 +6,8 @@
 #ifndef PHYS_PAGE_H
 #define PHYS_PAGE_H
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
+#include "stdint.h"
+#include "stddef.h"
 
 #define PAGE_SIZE 4096
 #define PAGE_SHIFT 12

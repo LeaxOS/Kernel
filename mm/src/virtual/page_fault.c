@@ -1,33 +1,20 @@
 /**
  * @file page_fault.c
- * @brief Gestionnaire de page faults et mécanismes de demand paging
- * 
- * Ce fichier implémente la gestion des page faults pour LeaxOS,
- * incluant le demand paging, copy-on-write, swap-in/out, et
- * la résolution des fautes d'accès mémoire.
- * 
- * Fonctionnalités principales:
- * - Gestion des page faults matériels
- * - Demand paging pour mappings de fichiers
- * - Copy-on-write (COW) pour fork()
- * - Swap-in depuis le stockage de swap
- * - Protection et validation d'accès
- * - Optimisations pour la performance
- * - Statistiques et débogage détaillés
+ * @brief Page fault handler implementation
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "page_alloc.h"
+#include "../include/page_table.h"
 
 
 /* Déclarations forward */
@@ -389,7 +376,7 @@ static int handle_allocate_page(page_fault_info_t *info) {
     }
     
     /* Allouer une nouvelle page physique */
-    phys_addr_t phys_page = pmm_alloc_page();
+    phys_addr_t phys_page = pmm_alloc_page(1); // Assuming '1' allocates one page; adjust as needed
     if (phys_page == 0) {
         printk(KERN_ERR "Failed to allocate physical page for fault\n");
         return -1;

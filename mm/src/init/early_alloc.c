@@ -1,33 +1,19 @@
 /**
  * @file early_alloc.c
- * @brief Allocateur bootstrap précoce pour l'initialisation du kernel
- * 
- * Ce fichier implémente un allocateur bootstrap simple et efficace utilisé
- * pendant les phases très précoces du démarrage du kernel, avant que le 
- * système de gestion mémoire complet soit disponible. Cet allocateur fournit:
- * 
- * - Allocation linéaire simple pour les structures critiques
- * - Gestion des dépendances d'initialisation
- * - Support pour les allocations urgentes
- * - Interface de transition vers le MM principal
- * - Mécanismes de débogage et validation
- * 
- * L'allocateur bootstrap est conçu pour être minimal mais robuste,
- * avec une empreinte mémoire réduite et des performances prévisibles.
+ * @brief Early kernel bootstrap allocator
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../include/early_malloc.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdint.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
+#include "early_malloc.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "stddef.h"
+#include "stdint.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
 #include "mm_setup.h"
 
 
@@ -258,10 +244,10 @@ static early_alloc_header_t *find_allocation_header(const void *ptr) {
  * @brief Initialize early allocator
  * @return 0 on success, negative error code on failure
  */
-int early_alloc_init(void) {
+void early_alloc_init(void) {
     if (g_early_alloc.initialized) {
         printk(KERN_WARNING "Early allocator already initialized\n");
-        return 0;
+        return;
     }
     
     printk(KERN_INFO "Initializing early bootstrap allocator\n");
@@ -280,8 +266,6 @@ int early_alloc_init(void) {
     
     printk(KERN_INFO "Early allocator initialized (%zu KB pool)\n", 
            EARLY_ALLOC_POOL_SIZE / 1024);
-    
-    return 0;
 }
 
 /**

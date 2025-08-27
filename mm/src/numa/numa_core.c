@@ -1,27 +1,20 @@
 /**
  * @file numa_core.c
- * @brief Implémentation principale du support NUMA pour LeaxOS
- * 
- * Ce fichier implémente la logique principale de gestion NUMA :
- * - Détection de la topologie NUMA
- * - Allocation mémoire locale aux nœuds
- * - Politiques d'allocation NUMA
- * - Migration automatique de pages
+ * @brief NUMA support core implementation
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/numa.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "numa.h"
+#include "mm.h"
+#include "page_alloc.h"
 
 /* ========================================================================
  * NUMA GLOBAL STATE
@@ -280,7 +273,7 @@ void *numa_alloc_onnode(size_t size, numa_node_t node, gfp_t flags) {
     
     /* For demonstration, use regular allocation */
     /* In reality, this would allocate from node-specific memory pool */
-    void *ptr = kmalloc(size, flags);
+    void *ptr = kmalloc(size);
     
     if (ptr) {
         g_numa_topology.nodes[node].free_memory -= size;

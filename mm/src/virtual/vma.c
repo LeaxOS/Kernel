@@ -1,33 +1,19 @@
 /**
  * @file vma.c
- * @brief Gestionnaire d'espaces d'adressage virtuels (Virtual Memory Areas)
- * 
- * Ce fichier implémente la gestion des VMA (Virtual Memory Areas) pour LeaxOS.
- * Les VMA représentent des régions contiguës de mémoire virtuelle avec des 
- * propriétés communes (permissions, type de mapping, etc.).
- * 
- * Fonctionnalités principales:
- * - Création et destruction de VMA
- * - Fusion et division de VMA
- * - Recherche et navigation dans l'arbre de VMA
- * - Gestion des permissions et attributs
- * - Support pour différents types de mappings
- * - Optimisations pour la performance
- * - Mécanismes de protection et sécurité
+ * @brief Virtual Memory Area management
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/vmalloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "vmalloc.h"
 
 /* Définition du GFP_KERNEL si non défini */
 #ifndef GFP_KERNEL

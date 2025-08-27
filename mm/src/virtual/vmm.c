@@ -1,35 +1,20 @@
 /**
  * @file vmm.c
- * @brief Virtual Memory Manager - Gestionnaire de mémoire virtuelle
- * 
- * Ce fichier implémente le gestionnaire principal de mémoire virtuelle pour
- * LeaxOS. Il fournit une interface unifiée pour la gestion des espaces
- * d'adressage virtuels, incluant:
- * 
- * - Gestion des tables de pages et MMU
- * - Allocation et mapping d'espaces virtuels
- * - Gestion des VMAs (Virtual Memory Areas)
- * - Support pour la pagination et le swap
- * - Protection mémoire et contrôle d'accès
- * - Optimisations pour les architectures modernes
- * 
- * Le VMM coordonne avec le PMM (Physical Memory Manager) pour fournir
- * une abstraction complète de la mémoire virtuelle aux processus.
+ * @brief Virtual Memory Manager
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
-#include "../../include/vmalloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "page_alloc.h"
+#include "vmalloc.h"
 #include "../physical/phys_page.h"
 
 

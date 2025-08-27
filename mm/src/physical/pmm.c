@@ -1,15 +1,16 @@
 /**
  * @file pmm.c
- * @brief Physical Memory Manager - Gestionnaire de mémoire physique
+ * @brief Physical Memory Manager
  * 
- * Gère l'allocation et la libération de pages de mémoire physique
+ * @author LeaxOS Team
+ * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "mm.h"
+#include "page_alloc.h"
 #include "phys_page.h"
 
 /**

@@ -1,32 +1,20 @@
 /**
  * @file mmap.c
- * @brief Implémentation des appels système mmap/munmap et gestion des mappings
- * 
- * Ce fichier implémente l'interface de mapping mémoire pour LeaxOS,
- * incluant les appels système mmap(), munmap(), mprotect(), etc.
- * 
- * Fonctionnalités principales:
- * - Mapping de fichiers en mémoire
- * - Mapping anonyme de mémoire
- * - Gestion des permissions et protections
- * - Optimisations pour différents types de mappings
- * - Support pour mémoire partagée
- * - Gestion des hints d'adresses
- * - Mécanismes de sécurité et validation
+ * @brief Memory mapping interface implementation
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/vmalloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "vmalloc.h"
+#include "mm_types.h"
 
 
 /* Déclarations forward pour les VMA */

@@ -1,34 +1,20 @@
 /**
  * @file heap_mgr.c
- * @brief Gestionnaire de heap principal pour LeaxOS
- * 
- * Ce fichier implémente le gestionnaire de heap central qui coordonne
- * les différents allocateurs (SLAB, SLUB, buddy system, etc.) et
- * fournit une interface unifiée pour l'allocation mémoire du kernel.
- * 
- * Fonctionnalités principales:
- * - Interface unifiée d'allocation mémoire
- * - Gestion de multiples allocateurs
- * - Optimisation automatique selon la taille
- * - Statistiques détaillées et monitoring
- * - Support pour allocation critique et atomique
- * - Gestion des zones mémoire spéciales
- * - Détection et prévention de la fragmentation
+ * @brief Heap manager for kernel memory allocation
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
-#include "../../include/slab.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "page_alloc.h"
+#include "slab.h"
 
 /* ========================================================================
  * HEAP MANAGER CONSTANTS AND DEFINITIONS

@@ -1,26 +1,19 @@
 /**
  * @file guard_pages.c
- * @brief Implémentation des pages de garde pour LeaxOS
- * 
- * Ce fichier implémente les mécanismes de pages de garde :
- * - Protection contre les débordements de pile
- * - Protection contre les débordements de tas
- * - Détection des accès non autorisés
- * - Gestion des pages canaries
+ * @brief Memory guard pages implementation
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/memory_protection.h"
-#include "../../include/mm.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "memory_protection.h"
+#include "mm.h"
 
 /* ========================================================================
  * INTERNAL GUARD PAGE STRUCTURES

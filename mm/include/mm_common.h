@@ -1,29 +1,24 @@
 /**
  * @file mm_common.h
- * @brief Définitions communes pour le système de gestion mémoire
- * 
- * Ce fichier contient toutes les définitions communes utilisées par
- * les différents composants du système de gestion mémoire pour éviter
- * les duplications et les conflits.
+ * @brief Common memory management definitions
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
 #ifndef LEAX_KERNEL_MM_COMMON_H
 #define LEAX_KERNEL_MM_COMMON_H
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* ========================================================================
- * KERNEL LOGGING DEFINITIONS
+ * BASIC KERNEL DEFINITIONS
  * ======================================================================== */
 
 #ifndef printk

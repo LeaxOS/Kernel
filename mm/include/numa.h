@@ -1,20 +1,8 @@
 /**
  * @file numa.h
- * @brief Interface NUMA (Non-Uniform Memory Access) pour LeaxOS
- * 
- * Ce header définit l'interface pour la gestion NUMA du noyau LeaxOS.
- * Le support NUMA optimise l'accès mémoire en tenant compte de la 
- * topologie physique et des latences entre processeurs et bancs mémoire.
- * 
- * Fonctionnalités :
- * - Détection automatique de la topologie NUMA
- * - Allocation mémoire locale au nœud
- * - Migration automatique de pages
- * - Équilibrage de charge NUMA
- * - Statistiques et monitoring
+ * @brief NUMA support interface
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 

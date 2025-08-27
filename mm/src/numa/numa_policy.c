@@ -1,26 +1,19 @@
 /**
  * @file numa_policy.c
- * @brief Gestion des politiques NUMA pour LeaxOS
- * 
- * Ce fichier implémente la gestion avancée des politiques NUMA :
- * - Politiques d'allocation par processus
- * - Héritage de politiques lors des forks
- * - Migration automatique basée sur les politiques
- * - Interface utilisateur pour configuration NUMA
+ * @brief NUMA policy management
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/numa.h"
-#include "../../include/mm.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "numa.h"
+#include "mm.h"
 
 /* ========================================================================
  * NUMA POLICY MANAGEMENT
@@ -256,9 +249,9 @@ void *numa_alloc_addr_policy(uint64_t addr, size_t size, gfp_t flags) {
     /* Get policy for this address */
     if (numa_get_addr_policy(addr, &policy) != MM_SUCCESS) {
         /* Fallback to default allocation */
-        return kmalloc(size, flags);
+        return kmalloc(size);
     }
-    
+
     return numa_alloc_policy(size, &policy, flags);
 }
 

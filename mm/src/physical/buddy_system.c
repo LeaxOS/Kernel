@@ -1,14 +1,14 @@
 /**
  * @file buddy_system.c
- * @brief Système buddy pour la gestion de la fragmentation
+ * @brief Buddy system for physical memory management
  * 
- * Implémente l'algorithme buddy system pour minimiser la fragmentation
- * de la mémoire physique.
+ * @author LeaxOS Team
+ * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
 #include "phys_page.h"
 
 #define MAX_ORDER 11  // 2^11 = 2048 pages = 8MB max

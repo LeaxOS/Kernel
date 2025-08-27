@@ -1,34 +1,21 @@
 /**
  * @file zone_mgr.c
- * @brief Gestion des zones mémoire (DMA, Normal, High)
- * 
- * Ce fichier implémente la gestion des différentes zones de mémoire physique
- * du système. Les zones permettent de classifier la mémoire selon ses
- * capacités et contraintes d'utilisation:
- * 
- * - Zone DMA: Mémoire accessible pour DMA (généralement < 16MB)
- * - Zone Normal: Mémoire normale directement mappée par le kernel
- * - Zone High: Mémoire haute qui doit être mappée temporairement
- * - Zone Movable: Mémoire dont les pages peuvent être déplacées
- * - Zone Device: Mémoire de devices mappés
- * 
- * Le gestionnaire de zones coordonne l'allocation entre ces différentes
- * zones selon les besoins et contraintes des allocateurs.
+ * @brief Memory zone manager
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "page_alloc.h"
 #include "phys_page.h"
+#include "mm_types.h"
 
 
 /* ========================================================================

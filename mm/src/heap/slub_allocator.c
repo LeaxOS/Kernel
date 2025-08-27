@@ -1,35 +1,20 @@
 /**
  * @file slub_allocator.c
- * @brief Implémentation de l'allocateur SLUB pour LeaxOS
- * 
- * Le SLUB (Slab Unification Layer) est une version améliorée du SLAB allocator
- * qui simplifie la gestion des caches et améliore les performances sur les
- * systèmes SMP. Il remplace les queues par des pointeurs directs et optimise
- * l'utilisation des caches per-CPU.
- * 
- * Fonctionnalités principales:
- * - Caches simplifiés avec pointeurs directs
- * - Optimisation per-CPU avancée
- * - Allocation/libération rapide avec freelist directe
- * - Mécanisme de fallback efficace
- * - Debug et tracing améliorés
- * - Support pour objets de grande taille
- * - Gestion automatique de la fragmentation
+ * @brief SLUB allocator implementation
  * 
  * @author LeaxOS Team
- * @date 2025
  * @version 1.0
  */
 
-#include "../../../Include/stdint.h"
-#include "../../../Include/stddef.h"
-#include "../../../Include/stdbool.h"
-#include "../../../Include/string.h"
-#include "../../../Include/stdio.h"
-#include "../../include/mm_common.h"
-#include "../../include/mm.h"
-#include "../../include/page_alloc.h"
-#include "../../include/slab.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "mm_common.h"
+#include "mm.h"
+#include "page_alloc.h"
+#include "slab.h"
 
 /* Fallback GFP definitions if not included properly */
 #ifndef GFP_ZERO

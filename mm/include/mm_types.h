@@ -1,28 +1,88 @@
 /**
  * @file mm_types.h
- * @brief Types et structures fondamentales pour la gestion mémoire
+ * @brief Memory management types and structures
  * 
- * Ce fichier définit tous les types de données, structures et énumérations
- * utilisés par le système de gestion mémoire LeaxOS. Il sert de base
- * pour tous les autres composants MM.
+ * @author LeaxOS Team
+ * @version 1.0
  */
 
 #ifndef MM_TYPES_H
 #define MM_TYPES_H
 
-#include "../../Include/stdint.h"
-#include "../../Include/stddef.h"
-#include "../../Include/stdbool.h"
+#include "stdint.h"
+#include "stddef.h"
+#include "stdbool.h"
 #include "mm_common.h"
+
+/* ========================================================================
+ * BASIC DATA STRUCTURES
+ * ======================================================================== */
+
+/* Double linked list */
+struct list_head {
+    struct list_head *next, *prev;
+};
+
+/* Red-black tree node */
+struct rb_node {
+    unsigned long rb_parent_color;
+    struct rb_node *rb_right;
+    struct rb_node *rb_left;
+};
+
+/* Red-black tree root */
+struct rb_root {
+    struct rb_node *rb_node;
+};
+
+/* Atomic counter */
+typedef struct {
+    volatile int counter;
+} atomic_t;
+
+/* GFP (Get Free Pages) flags type */
+typedef unsigned int gfp_flags_t;
+
+/* GFP flag constants */
+#define GFP_KERNEL          0x00
+#define GFP_ATOMIC          0x01
+#define GFP_USER            0x02
+#define GFP_HIGHUSER        0x04
+#define GFP_DMA             0x08
+#define GFP_DMA32           0x10
+#define GFP_ZERO            0x20
+#define GFP_COLD            0x40
+#define GFP_REPEAT          0x80
+#define GFP_NOFAIL          0x100
+#define GFP_NORETRY         0x200
+
+/* Kernel logging levels */
+#define KERN_EMERG    "<0>"
+#define KERN_ALERT    "<1>"
+#define KERN_CRIT     "<2>"
+#define KERN_ERR      "<3>"
+#define KERN_WARNING  "<4>"
+#define KERN_NOTICE   "<5>"
+#define KERN_INFO     "<6>"
+#define KERN_DEBUG    "<7>"
+#define KERN_CONT     "<c>"
+
+/* KMalloc size constants */
+#define KMALLOC_HUGE_THRESHOLD  (4 * 1024 * 1024)  /* 4MB */
+
+/* Page type */
+typedef struct page {
+    unsigned long flags;
+    atomic_t ref_count;
+    void *virtual_addr;
+    struct list_head lru;
+} page_t;
 
 /* ========================================================================
  * FORWARD DECLARATIONS
  * ======================================================================== */
 
 /* Forward declarations for complex types */
-struct list_head;
-struct rb_node;
-struct rb_root;
 typedef struct pgd pgd_t;
 typedef struct mm_context mm_context_t;
 
@@ -205,6 +265,12 @@ typedef enum {
     VM_NONLINEAR    = (1 << 21)     /* Mapping non-linéaire */
 } vm_flags_t;
 
+/* VMA-specific flags (used by mmap.c) */
+#define VMA_FLAG_MERGEABLE   (1U << 0)
+#define VMA_FLAG_GROWSDOWN   (1U << 1)
+#define VMA_FLAG_LOCKED      (1U << 2)
+#define VMA_FLAG_HUGEPAGE    (1U << 3)
+
 /**
  * @brief Structure VMA (Virtual Memory Area)
  */
@@ -218,6 +284,7 @@ typedef struct vm_area_struct {
     struct rb_node vm_rb;           /* Nœud dans l'arbre rouge-noir */
     
     vm_flags_t vm_flags;            /* Flags de protection */
+    uint32_t vm_prot;               /* Protection converted to VM_* flags */
     vma_type_t vm_type;             /* Type de VMA */
     
     struct mm_struct *vm_mm;        /* MM parent */
@@ -264,9 +331,6 @@ typedef struct mm_struct {
     
     /* Table des pages */
     pgd_t *pgd;                     /* Répertoire global des pages */
-    
-    /* Contexte architecture-spécifique */
-    mm_context_t context;
 } mm_struct_t;
 
 /* ========================================================================
