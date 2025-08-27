@@ -1,228 +1,218 @@
-# LeaxOS — Module de Gestion Mémoire
+# LeaxOS Memory Management Module
 
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/Build-Passing-green.svg)]()
-[![Version](https://img.shields.io/badge/Version-1.0-orange.svg)]()
+## Overview
 
-## 📋 Table des Matières
+The LeaxOS Memory Management (MM) module provides a comprehensive and robust memory management system for the LeaxOS kernel. This module implements all critical aspects of memory management including physical and virtual memory allocation, memory protection, and virtual memory operations.
 
-- [Présentation](#présentation)
-- [Architecture](#architecture)
-- [Fonctionnalités Clés](#fonctionnalités-clés)
-- [Prérequis](#prérequis)
-- [Installation & Compilation](#installation-et-compilation)
-- [Utilisation](#utilisation)
-- [Configuration](#configuration)
-- [Performance](#performance)
-- [Sécurité](#sécurité)
-- [Tests & Qualité](#tests-et-qualité)
-- [Documentation](#documentation)
-- [Contribution](#contribution)
-- [Licence](#licence)
+## Architecture
 
-## 📖 Présentation
-
-Le module de gestion mémoire (`mm`) constitue le cœur du sous-système mémoire du noyau LeaxOS. Cette implémentation de pointe offre une architecture modulaire et robuste pour tous les aspects critiques de la gestion mémoire moderne.
-
-### 🎯 Philosophie de Conception
-
-- **Modularité** : Séparation claire des responsabilités avec interfaces bien définies
-- **Performance** : Optimisé pour la vitesse et l'efficacité mémoire
-- **Fiabilité** : Gestion d'erreurs complète et vérifications d'intégrité
-- **Sécurité** : Mécanismes intégrés contre les vulnérabilités courantes
-- **Évolutivité** : Conçu pour gérer de grandes configurations mémoire et systèmes SMP
-
-### 🔍 Composants Principaux
-
-Le module MM englobe plusieurs sous-systèmes critiques travaillant en harmonie :
-
-- **Gestion Mémoire Physique** : Allocateur buddy pour une gestion efficace des pages
-- **Mémoire Virtuelle** : Gestion complète de l'espace d'adressage virtuel avec support paging
-- **Gestion du Tas** : Allocateurs multiples (SLAB/SLUB, kmalloc) pour différents cas d'usage
-- **Protection Mémoire** : Isolation basée sur domaines et mécanismes de pages de garde
-- **Support NUMA** : Allocation mémoire optimisée pour architectures Non-Uniform Memory Access
-
-## 🏗️ Architecture
-
-### Structure du Module
+### Module Structure
 
 ```
 mm/
-├── include/              # Interfaces publiques
-│   ├── mm_common.h      # Types communs, erreurs, macros
-│   ├── mm.h             # Interface principale gestionnaire mémoire
-│   ├── memory_protection.h # Protection mémoire et domaines
-│   ├── page_alloc.h     # Allocateur de pages physiques
-│   ├── slab.h           # Allocateur SLAB/SLUB
-│   ├── vmalloc.h        # Allocateur mémoire virtuelle
-│   ├── mmap.h           # Memory mapping (mmap/munmap)
-│   ├── numa.h           # Support NUMA
-│   └── page_table.h     # Gestion tables de pages
-├── src/                  # Implémentations
-│   ├── init/            # Initialisation du sous-système
-│   ├── physical/        # Gestion mémoire physique
-│   ├── virtual/         # Gestion mémoire virtuelle
-│   ├── heap/            # Allocateurs de tas
-│   ├── protection/      # Protection mémoire et sécurité
-│   ├── numa/            # Support NUMA
-│   └── swap/            # Gestion du swap
-└── docs/                # Documentation technique
+├── include/              # Public interfaces
+│   ├── mm_common.h      # Common types, errors, macros
+│   ├── mm.h             # Main memory manager interface
+│   ├── memory_protection.h # Memory protection and domains
+│   ├── page_alloc.h     # Physical page allocator
+│   ├── slab.h           # SLAB/SLUB allocator
+│   ├── vmalloc.h        # Virtual memory allocator
+│   ├── mmap.h           # Memory mapping interface
+│   ├── numa.h           # NUMA support
+│   └── page_table.h     # Page table management
+├── src/                  # Implementation files
+│   ├── init/            # Subsystem initialization
+│   ├── physical/        # Physical memory management
+│   ├── virtual/         # Virtual memory management
+│   ├── heap/            # Heap allocators
+│   ├── protection/      # Memory protection and security
+│   ├── numa/            # NUMA support
+│   └── swap/            # Swap management
+└── docs/                # Technical documentation
 ```
 
-### Organisation en Couches
+### Layered Architecture
 
-Le code est structuré selon une approche en couches hiérarchiques :
+The code is organized in hierarchical layers:
 
-- **`physical/`** : Gestion des pages physiques, allocateur buddy, PMM
-- **`virtual/`** : Tables de pages, gestionnaire de défauts de page, mmap/VMA
-- **`heap/`** : kmalloc, allocateurs SLAB/SLUB
-- **`protection/`** : Pages de garde, domaines de protection, gestion des violations
-- **`swap/`** : Gestionnaire de swap et I/O
-- **`init/`** : Initialisation et configuration du sous-système
+```
++-------------------+
+|   User Space      |
++-------------------+
+         |
++-------------------+
+|   Virtual Memory  |  <- mmap, VMA, page faults
++-------------------+
+         |
++-------------------+
+|   Heap Management |  <- kmalloc, SLAB/SLUB, vmalloc
++-------------------+
+         |
++-------------------+
+| Physical Memory   |  <- Buddy allocator, zones, PMM
++-------------------+
+         |
++-------------------+
+|   Hardware        |
++-------------------+
+```
 
-### Interfaces Publiques
+### Memory Zones Architecture
 
-Toutes les interfaces publiques sont exposées via le répertoire `include/`, permettant une intégration propre avec le reste du noyau sans dépendances internes.
+```
+Physical Memory Layout:
++-------------------+  <- ZONE_HIGH start
+|   High Memory     |     (896MB - end)
+|   (ZONE_HIGH)     |
++-------------------+
+|   Normal Memory   |     (16MB - 896MB)
+|   (ZONE_NORMAL)   |
++-------------------+
+|   DMA Memory      |     (0 - 16MB)
+|   (ZONE_DMA)      |
++-------------------+
+```
 
-## ✨ Fonctionnalités Clés
+## Core Features
 
-### 🔧 Allocateurs Mémoire
+### Memory Allocators
 
-#### Allocateur de Pages Physiques
-- **Buddy System** : Allocation/désallocation efficace de pages contiguës
-- **Gestion des Zones** : DMA, Normal, High Memory avec politiques adaptées
-- **Watermarks** : Contrôle automatique des niveaux de mémoire libre
-- **Réclamation** : Récupération automatique de mémoire sous pression
+#### Physical Page Allocator
+- Buddy system for efficient contiguous page allocation
+- Zone-based management (DMA, Normal, High Memory)
+- Automatic reclamation under memory pressure
+- Watermark-based memory level control
 
-#### Allocateurs de Tas
-- **kmalloc/kfree** : Interface standard pour allocations kernel
-- **SLAB/SLUB** : Allocation d'objets de taille fixe avec cache coloring
-- **vmalloc** : Allocation de mémoire virtuelle contiguë (non physique)
-- **Early Allocator** : Gestion mémoire durant les phases de boot
+#### Heap Allocators
+- kmalloc/kfree: Standard kernel memory allocation
+- SLAB/SLUB: Fixed-size object allocation with cache coloring
+- vmalloc: Contiguous virtual memory allocation
+- Early allocator: Memory management during boot phases
 
-### 🛡️ Protection Mémoire
+### Memory Protection
 
-#### Domaines de Sécurité
-- **Isolation par Domaines** : Séparation entre kernel, drivers, userspace
-- **Contrôle d'Accès** : Permissions granulaires par domaine
-- **Migration de Mémoire** : Déplacement sécurisé entre domaines
+#### Security Domains
+- Domain-based isolation between kernel, drivers, userspace
+- Granular access control per domain
+- Secure memory migration between domains
 
-#### Mécanismes de Protection
-- **Pages de Garde** : Détection d'overflows stack/heap
-- **NX/XD Support** : Protection contre exécution de données
-- **SMEP/SMAP** : Protection avancée contre accès kernel non autorisés
-- **Memory Barriers** : Synchronisation SMP robuste
+#### Protection Mechanisms
+- Guard pages for stack/heap overflow detection
+- NX/XD bit support for data execution prevention
+- SMEP/SMAP for advanced kernel protection
+- Memory barriers for SMP synchronization
 
-### 🌐 Gestion Mémoire Virtuelle
+### Virtual Memory Management
 
 #### Memory Mapping
-- **mmap/munmap** : Interface standard de mapping mémoire
-- **VMA Management** : Gestion fine des régions mémoire virtuelles
-- **Lazy Allocation** : Allocation à la demande avec demand-paging
+- mmap/munmap: Standard memory mapping interface
+- VMA management: Fine-grained virtual memory region handling
+- Lazy allocation with demand paging
 
-#### Gestionnaire de Défauts de Page
-- **Page Fault Handler** : Traitement complet des défauts de page
-- **Copy-on-Write** : Optimisation des duplications de processus
-- **Stack Growth** : Extension automatique de la pile
-- **Demand Paging** : Chargement paresseux des pages
+#### Page Fault Handling
+- Comprehensive page fault processing
+- Copy-on-Write optimization for process duplication
+- Automatic stack growth
+- Demand paging for file-backed memory
 
-### ⚡ Optimisations Avancées
+### Advanced Optimizations
 
-#### Support NUMA
-- **Allocation Locale** : Préférence pour la proximité mémoire
-- **Load Balancing** : Équilibrage automatique entre nœuds
-- **Migration Intelligente** : Déplacement optimal des pages
+#### NUMA Support
+- Local memory allocation preference
+- Automatic load balancing between nodes
+- Intelligent page migration
 
-#### Optimisations SMP
-- **Per-CPU Caches** : Allocation rapide mono-processeur
-- **Lock Contention** : Réduction des contentions sur les verrous
-- **Scalabilité** : Performance maintenue avec augmentation CPU
+#### SMP Optimizations
+- Per-CPU allocation caches
+- Reduced lock contention
+- Maintained performance scaling with CPU count
 
-### 📊 Monitoring et Diagnostic
+### Monitoring and Diagnostics
 
-#### Statistiques Exhaustives
-- **Métriques Temps Réel** : Suivi des allocations/désallocations
-- **Analyse de Fragmentation** : Mesure de l'efficacité mémoire
-- **Détection de Fuites** : Outils de diagnostic des fuites mémoire
+#### Comprehensive Statistics
+- Real-time allocation/deallocation tracking
+- Memory fragmentation analysis
+- Memory leak detection tools
 
-#### Debugging Avancé
-- **Tracing** : Suivi détaillé des opérations mémoire
-- **Integrity Checks** : Vérifications périodiques d'intégrité
-- **Memory Dump** : Analyse post-mortem des états mémoire
+#### Advanced Debugging
+- Detailed operation tracing
+- Periodic integrity verification
+- Post-mortem memory state analysis
 
-## Installation et compilation
+## Prerequisites
 
-Prérequis
-- Make, un compilateur C (gcc/clang) — sur Windows utilisez MSYS2/MinGW ou WSL
+- Make build system
+- C compiler (GCC/Clang) - on Windows use MSYS2/MinGW or WSL
+- Standard C library headers
 
-Compiler le module `mm` (depuis la racine du dépôt) :
+## Installation and Compilation
+
+Compile the mm module (from repository root):
 
 ```powershell
 make -C "c:\Users\leaf_\Desktop\Projet\shard-1\Leax\Kernel\mm" check
 make -C "c:\Users\leaf_\Desktop\Projet\shard-1\Leax\Kernel\mm"
 ```
 
-- `check` : vérifie la présence du compilateur et affiche la version
-- La compilation génère `libmm.a` et les objets intermédiaires dans `mm/build/`.
+- `check`: Verifies compiler presence and displays version
+- Compilation generates `libmm.a` and intermediate objects in `mm/build/`
 
-Conseils
-- Sur Windows, préférez WSL ou MSYS2 pour un environnement Make / gcc compatible.
-- Pour le développement en noyau, ajustez `CFLAGS`/`CC` selon la toolchain cible.
+### Recommendations
+- On Windows, prefer WSL or MSYS2 for Make/GCC compatible environment
+- For kernel development, adjust `CFLAGS`/`CC` according to target toolchain
 
-## Usage et API rapide
+## Usage and API
 
-Exemples d'usage (API exposée dans `mm/include/`):
-
-- Initialisation :
+### Initialization
 
 ```c
 mm_early_init();
 mm_init(&config);
 ```
 
-- Allocations :
+### Memory Allocation
 
 ```c
 void *p = kmalloc(1024, GFP_KERNEL);
 kfree(p);
 
 void *v = vmalloc(4096);
-
 ```
 
-- Mmap/munmap : exemples dans `src/virtual/mmap.c` (API simulée pour tests utilisateurspace)
+### Memory Mapping
 
-Consultez `mm/include/` pour la liste complète des prototypes et structures.
+See `src/virtual/mmap.c` for mmap/munmap examples (simulated API for userspace testing)
 
-## Tests et qualité
+Refer to `mm/include/` for complete list of prototypes and structures.
 
-- Les composants ont des tests unitaires et d'intégration (emplacements dans `mm/tests/` si présent).
-- Exécuter une compilation rapide et vérifier l'absence d'erreurs :
+## Testing and Quality
+
+- Components include unit and integration tests
+- Perform quick compilation and verify no errors:
 
 ```powershell
 make -C "c:\Users\leaf_\Desktop\Projet\shard-1\Leax\Kernel\mm" -j 6
 ```
 
-- Utiliser l'outil d'analyse statique (IntelliSense/clang-tidy) pour repérer les problèmes de types et headers.
+- Use static analysis tools (IntelliSense/clang-tidy) to identify type and header issues
 
-# Pour contribuer :
+## Contributing
 
-Contacts et reviewers : voir `CONTRIBUTORS.md` à la racine du dépôt.
+See `CONTRIBUTORS.md` at repository root for contacts and reviewers.
 
-## Style et bonnes pratiques
+### Code Style and Best Practices
 
-- Indentation : 4 espaces
-- Longueur de ligne : ~100 caractères max
-- Documentation publique : Doxygen
-- Variables et types : suffixe `_t` pour types, `MM_`/`VM_` pour constantes globales
+- Indentation: 4 spaces
+- Line length: ~100 characters maximum
+- Public documentation: Doxygen format
+- Variables and types: `_t` suffix for types, `MM_`/`VM_` prefix for global constants
 
-## Licence et auteurs
+## License and Authors
 
-Ce module reprend la licence du dépôt racine — consultez `LICENSE` à la racine.
+This module follows the repository root license - see `LICENSE` at root.
 
-Maintenu par l'équipe LeaxOS. Pour questions et contributions, voir `CONTRIBUTORS.md`.
+Maintained by LeaxOS team. For questions and contributions, see `CONTRIBUTORS.md`.
 
 ---
 
-Fichier maintenu : `mm/README.md` — conçu pour être clair, professionnel et facilement utilisable par un contributeur ou intégrateur.
-buddy_print_stats();
+File maintained: `mm/README.md` - designed to be clear, professional and easily usable by contributors or integrators.
